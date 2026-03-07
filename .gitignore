@@ -1,0 +1,6 @@
+# Build outputs
+build/
+output/
+*.exe
+cli
+gui
