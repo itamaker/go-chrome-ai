@@ -1,5 +1,9 @@
 # go-chrome-ai
 
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
 English | [中文](README.zh.md)
 
 `go-chrome-ai` is a cross-platform Chrome profile patcher written in Go, with both **CLI** and **GUI** modes.
@@ -65,3 +69,19 @@ All build artifacts are written to `output/`.
 - Back up Chrome `User Data` if you want a safety net.
 - Run with the same OS user that owns the Chrome profile.
 - Not affiliated with Google. Use at your own risk.
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/itamaker"><img src="https://github.com/itamaker.png?size=100" width="100px;" alt="itamaker"/><br /><sub><b>Zhaoyang Jia</b></sub></a><br /><a href="https://github.com/itamaker/go-chrome-ai/commits?author=itamaker" title="Code">💻</a> <a href="https://github.com/itamaker/go-chrome-ai/commits?author=itamaker" title="Documentation">📖</a></td>
+  </tr>
+</table>
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
