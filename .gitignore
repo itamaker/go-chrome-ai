@@ -2,5 +2,7 @@
 build/
 output/
 *.exe
-cli
-gui
+
+# Root binaries from `go build` without -o
+/cli
+/gui
