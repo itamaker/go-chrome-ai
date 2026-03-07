@@ -9,6 +9,42 @@
 
 ![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
 
+## Quickstart
+
+### 安装并运行 go-chrome-ai
+
+可按你偏好的方式安装：
+
+```bash
+# 从源码构建
+make build
+```
+
+```bash
+# 或通过 Homebrew（自定义 tap）安装
+brew tap itamaker/tap
+brew install --cask go-chrome-ai
+```
+
+然后运行：
+
+```bash
+go-chrome-ai        # 命令行模式
+go-chrome-ai gui    # 图形界面模式
+```
+
+<details>
+<summary>也可以从 GitHub Releases 直接下载二进制。</summary>
+
+当前发布包：
+
+- macOS（Apple Silicon/arm64）：`go-chrome-ai-darwin-arm64.tar.gz`
+- macOS（Intel/x86_64）：`go-chrome-ai-darwin-amd64.tar.gz`
+
+每个压缩包都只包含一个可执行文件：`go-chrome-ai`。
+
+</details>
+
 它通过修改 Chrome 本地配置来启用相关 AI 功能（如 **Ask Gemini**）：
 
 - 递归将 `is_glic_eligible` 设为 `true`
@@ -23,7 +59,7 @@
 ## 运行 CLI
 
 ```bash
-go run ./cmd/cli
+go run ./cmd/go-chrome-ai
 ```
 
 参数：
@@ -34,7 +70,7 @@ go run ./cmd/cli
 ## 运行 GUI
 
 ```bash
-go run ./cmd/gui
+go run ./cmd/go-chrome-ai gui
 ```
 
 GUI 功能：
@@ -47,15 +83,22 @@ GUI 功能：
 ## 构建
 
 ```bash
-go build -o output/go-chrome-ai-cli ./cmd/cli
-go build -o output/go-chrome-ai-gui ./cmd/gui
+go build -o output/go-chrome-ai ./cmd/go-chrome-ai
 ```
 
 Makefile：
 
-- `make build`（或 `make cli` / `make gui`）
+- `make build`
+- `make release`：生成 Homebrew cask 需要的发布资产到 `output/release/`
 
 所有构建产物统一输出到 `output/`。
+
+安装后的用法：
+
+```bash
+go-chrome-ai        # 命令行模式
+go-chrome-ai gui    # 图形界面模式
+```
 
 ## 执行流程
 
