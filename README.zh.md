@@ -5,6 +5,10 @@
 `go-chrome-ai` 是一个用 Go 编写的跨平台 Chrome 配置修补工具，同时支持 **CLI** 和 **GUI**。
 它可以在不重装 Chrome、不重建用户配置的情况下启用相关 AI 功能（包括 **Ask Gemini**）。
 
+## 截图
+
+![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
+
 它通过修改 Chrome 本地配置来启用相关 AI 功能（如 **Ask Gemini**）：
 
 - 递归将 `is_glic_eligible` 设为 `true`

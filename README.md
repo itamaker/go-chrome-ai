@@ -9,6 +9,10 @@ English | [中文](README.zh.md)
 `go-chrome-ai` is a cross-platform Chrome profile patcher written in Go, with both **CLI** and **GUI** modes.
 It helps enable Chrome AI-related features, including **Ask Gemini**, without reinstalling Chrome or recreating your profile.
 
+## Screenshot
+
+![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
+
 It enables Chrome AI-related features (such as **Ask Gemini**) by patching local profile state:
 
 - `is_glic_eligible` (recursive) -> `true`
