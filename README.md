@@ -13,6 +13,42 @@ It helps enable Chrome AI-related features, including **Ask Gemini**, without re
 
 ![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
 
+## Quickstart
+
+### Installing and running go-chrome-ai
+
+Install with your preferred method:
+
+```bash
+# Build from source
+make build
+```
+
+```bash
+# Or install via Homebrew (custom tap)
+brew tap itamaker/tap
+brew install --cask go-chrome-ai
+```
+
+Then run:
+
+```bash
+go-chrome-ai        # CLI mode
+go-chrome-ai gui    # GUI mode
+```
+
+<details>
+<summary>You can also download binaries from GitHub Releases.</summary>
+
+Current release archives:
+
+- macOS (Apple Silicon/arm64): `go-chrome-ai-darwin-arm64.tar.gz`
+- macOS (Intel/x86_64): `go-chrome-ai-darwin-amd64.tar.gz`
+
+Each archive contains a single executable: `go-chrome-ai`.
+
+</details>
+
 It enables Chrome AI-related features (such as **Ask Gemini**) by patching local profile state:
 
 - `is_glic_eligible` (recursive) -> `true`
@@ -27,7 +63,7 @@ It enables Chrome AI-related features (such as **Ask Gemini**) by patching local
 ## Run CLI
 
 ```bash
-go run ./cmd/cli
+go run ./cmd/go-chrome-ai
 ```
 
 Flags:
@@ -38,7 +74,7 @@ Flags:
 ## Run GUI
 
 ```bash
-go run ./cmd/gui
+go run ./cmd/go-chrome-ai gui
 ```
 
 The GUI includes:
@@ -51,15 +87,22 @@ The GUI includes:
 ## Build
 
 ```bash
-go build -o output/go-chrome-ai-cli ./cmd/cli
-go build -o output/go-chrome-ai-gui ./cmd/gui
+go build -o output/go-chrome-ai ./cmd/go-chrome-ai
 ```
 
 Makefile:
 
-- `make build` (or `make cli` / `make gui`)
+- `make build`
+- `make release` to generate Homebrew cask release assets in `output/release/`
 
 All build artifacts are written to `output/`.
+
+Installed binary usage:
+
+```bash
+go-chrome-ai        # CLI mode
+go-chrome-ai gui    # GUI mode
+```
 
 ## What It Does
 

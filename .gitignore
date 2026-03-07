@@ -6,3 +6,4 @@ output/
 # Root binaries from `go build` without -o
 /cli
 /gui
+/go-chrome-ai
