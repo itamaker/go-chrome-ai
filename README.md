@@ -30,6 +30,16 @@ brew tap itamaker/tap
 brew install --cask go-chrome-ai
 ```
 
+On some macOS systems, Gatekeeper may block first launch for downloaded binaries. If that happens, run:
+
+```bash
+xattr -d com.apple.quarantine $(which go-chrome-ai)
+```
+
+Typical warning:
+
+> Apple could not verify “go-chrome-ai” is free of malware that may harm your Mac or compromise your privacy.
+
 Then run:
 
 ```bash
