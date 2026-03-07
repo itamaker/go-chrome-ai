@@ -26,6 +26,16 @@ brew tap itamaker/tap
 brew install --cask go-chrome-ai
 ```
 
+在某些 macOS 系统上，首次运行下载的二进制可能会被 Gatekeeper 拦截。可执行：
+
+```bash
+xattr -d com.apple.quarantine $(which go-chrome-ai)
+```
+
+常见提示如下：
+
+> Apple could not verify “go-chrome-ai” is free of malware that may harm your Mac or compromise your privacy.
+
 然后运行：
 
 ```bash
