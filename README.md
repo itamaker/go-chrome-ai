@@ -1,13 +1,15 @@
 # go-chrome-ai
 
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-English | [中文](README.zh.md)
+English | [中文](docs/README.zh.md)
 
 `go-chrome-ai` is a cross-platform Chrome profile patcher written in Go, with both **CLI** and **GUI** modes.
 It helps enable Chrome AI-related features, including **Ask Gemini**, without reinstalling Chrome or recreating your profile.
+
+## Support
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/amaker)
 
 ## Screenshot
 
@@ -129,16 +131,11 @@ go-chrome-ai gui    # GUI mode
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+| [![Zhaoyang Jia][avatar-zhaoyang]][author-zhaoyang] |
+| --- |
+| [Zhaoyang Jia][author-zhaoyang] |
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tr>
-    <td align="center"><a href="https://github.com/itamaker"><img src="https://github.com/itamaker.png?size=100" width="100px;" alt="itamaker"/><br /><sub><b>Zhaoyang Jia</b></sub></a><br /><a href="https://github.com/itamaker/go-chrome-ai/commits?author=itamaker" title="Code">💻</a> <a href="https://github.com/itamaker/go-chrome-ai/commits?author=itamaker" title="Documentation">📖</a></td>
-  </tr>
-</table>
-<!-- markdownlint-enable -->
-<!-- prettier-ignore-end -->
-<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+
+[author-zhaoyang]: https://github.com/itamaker
+[avatar-zhaoyang]: https://images.weserv.nl/?url=https://github.com/itamaker.png&h=120&w=120&fit=cover&mask=circle&maxage=7d

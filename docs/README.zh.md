@@ -1,13 +1,17 @@
 # go-chrome-ai
 
-[English](README.md) | 中文
+[English](../README.md) | 中文
 
 `go-chrome-ai` 是一个用 Go 编写的跨平台 Chrome 配置修补工具，同时支持 **CLI** 和 **GUI**。
 它可以在不重装 Chrome、不重建用户配置的情况下启用相关 AI 功能（包括 **Ask Gemini**）。
 
+## Support
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/amaker)
+
 ## 截图
 
-![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
+![go-chrome-ai GUI](images/go-chrome-ai-gui.png)
 
 ## Quickstart
 
