@@ -129,6 +129,12 @@ go-chrome-ai gui    # GUI mode
 - Run with the same OS user that owns the Chrome profile.
 - Not affiliated with Google. Use at your own risk.
 
+## Acknowledgements
+
+[![Built with OpenAI Codex](https://img.shields.io/badge/Built%20with-OpenAI%20Codex-10A37F?style=for-the-badge&logo=openai&logoColor=white)](https://chatgpt.com/codex)
+
+Special thanks to **OpenAI Codex** for assisting with parts of the implementation of this project.
+
 ## Contributors ✨
 
 | [![Zhaoyang Jia][avatar-zhaoyang]][author-zhaoyang] |

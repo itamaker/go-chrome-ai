@@ -126,3 +126,9 @@ go-chrome-ai gui    # 图形界面模式
 - 建议先备份 Chrome `User Data`。
 - 请使用拥有该 Chrome 配置的同一系统用户运行。
 - 本项目与 Google 无关，风险自担。
+
+## 致谢
+
+[![Built with OpenAI Codex](https://img.shields.io/badge/Built%20with-OpenAI%20Codex-10A37F?style=for-the-badge&logo=openai&logoColor=white)](https://chatgpt.com/codex)
+
+特别感谢 **OpenAI Codex** 为本项目部分代码实现提供的协助。
