@@ -1,4 +1,4 @@
-module go-chrome-ai
+module github.com/itamaker/go-chrome-ai
 
 go 1.26.0
 

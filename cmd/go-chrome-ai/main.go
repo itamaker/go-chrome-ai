@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"go-chrome-ai/internal/app"
+	"github.com/itamaker/go-chrome-ai/internal/app"
 )
 
 func main() {

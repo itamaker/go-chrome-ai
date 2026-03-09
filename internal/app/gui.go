@@ -11,7 +11,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
-	"go-chrome-ai/internal/chrome"
+	"github.com/itamaker/go-chrome-ai/internal/chrome"
 )
 
 func RunGUI() {
