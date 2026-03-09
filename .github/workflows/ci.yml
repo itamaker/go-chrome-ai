@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    tags-ignore:
+      - "*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Build release archives
+        run: make release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: go-chrome-ai-${{ github.sha }}
+          path: output/release/*
+          if-no-files-found: error
