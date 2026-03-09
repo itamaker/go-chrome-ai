@@ -1,8 +1,8 @@
 # Homebrew Cask (Tap)
 
-To support `brew install --cask`, publish a cask in your tap repo (for example `itamaker/homebrew-tap`):
+To support `brew install --cask`, publish the cask in your tap repo [`itamaker/homebrew-tap`](https://github.com/itamaker/homebrew-tap):
 
-- `Casks/go-chrome-ai.rb` (use [packaging/homebrew/Casks/go-chrome-ai.rb](../packaging/homebrew/Casks/go-chrome-ai.rb) as template)
+- [`Casks/go-chrome-ai.rb`](https://github.com/itamaker/homebrew-tap/blob/main/Casks/go-chrome-ai.rb)
 
 ## Release asset naming
 
