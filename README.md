@@ -17,19 +17,49 @@ It helps enable Chrome AI-related features, including **Ask Gemini**, without re
 
 ## Quickstart
 
-### Installing and running go-chrome-ai
+### Install
 
 Install with your preferred method:
 
 ```bash
-# Build from source
-make build
+# Install the latest macOS release
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
 ```
 
 ```bash
 # Or install via Homebrew (custom tap)
 brew tap itamaker/tap
 brew install --cask go-chrome-ai
+```
+
+<details>
+<summary>You can also download binaries from <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a>.</summary>
+
+Current release archives:
+
+- macOS (Apple Silicon/arm64): `go-chrome-ai-darwin-arm64.tar.gz`
+- macOS (Intel/x86_64): `go-chrome-ai-darwin-amd64.tar.gz`
+
+Each archive contains a single executable: `go-chrome-ai`.
+
+</details>
+
+The install script also accepts:
+
+```bash
+# Install a specific release into a custom directory
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.1 INSTALL_DIR=$HOME/bin sh
+```
+
+Set `SKIP_PATH_SETUP=1` if you do not want the installer to edit your shell profile.
+
+### First Run
+
+Run:
+
+```bash
+go-chrome-ai        # CLI mode
+go-chrome-ai gui    # GUI mode
 ```
 
 On some macOS systems, Gatekeeper may block first launch for downloaded binaries. If that happens, run:
@@ -41,25 +71,6 @@ xattr -d com.apple.quarantine $(which go-chrome-ai)
 Typical warning:
 
 > Apple could not verify “go-chrome-ai” is free of malware that may harm your Mac or compromise your privacy.
-
-Then run:
-
-```bash
-go-chrome-ai        # CLI mode
-go-chrome-ai gui    # GUI mode
-```
-
-<details>
-<summary>You can also download binaries from GitHub Releases.</summary>
-
-Current release archives:
-
-- macOS (Apple Silicon/arm64): `go-chrome-ai-darwin-arm64.tar.gz`
-- macOS (Intel/x86_64): `go-chrome-ai-darwin-amd64.tar.gz`
-
-Each archive contains a single executable: `go-chrome-ai`.
-
-</details>
 
 It enables Chrome AI-related features (such as **Ask Gemini**) by patching local profile state:
 
@@ -96,7 +107,11 @@ The GUI includes:
 - progress bar
 - real-time logs
 
-## Build
+## Build From Source
+
+```bash
+make build
+```
 
 ```bash
 go build -o output/go-chrome-ai ./cmd/go-chrome-ai

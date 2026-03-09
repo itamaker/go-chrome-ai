@@ -15,19 +15,49 @@
 
 ## Quickstart
 
-### 安装并运行 go-chrome-ai
+### 安装
 
 可按你偏好的方式安装：
 
 ```bash
-# 从源码构建
-make build
+# 安装最新的 macOS release
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
 ```
 
 ```bash
 # 或通过 Homebrew（自定义 tap）安装
 brew tap itamaker/tap
 brew install --cask go-chrome-ai
+```
+
+<details>
+<summary>也可以从 <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a> 直接下载二进制。</summary>
+
+当前发布包：
+
+- macOS（Apple Silicon/arm64）：`go-chrome-ai-darwin-arm64.tar.gz`
+- macOS（Intel/x86_64）：`go-chrome-ai-darwin-amd64.tar.gz`
+
+每个压缩包都只包含一个可执行文件：`go-chrome-ai`。
+
+</details>
+
+安装脚本也支持：
+
+```bash
+# 安装指定版本，并放到自定义目录
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.1 INSTALL_DIR=$HOME/bin sh
+```
+
+如果你不希望安装器修改 shell 配置文件，可设置 `SKIP_PATH_SETUP=1`。
+
+### 首次运行
+
+运行：
+
+```bash
+go-chrome-ai        # 命令行模式
+go-chrome-ai gui    # 图形界面模式
 ```
 
 在某些 macOS 系统上，首次运行下载的二进制可能会被 Gatekeeper 拦截。可执行：
@@ -39,25 +69,6 @@ xattr -d com.apple.quarantine $(which go-chrome-ai)
 常见提示如下：
 
 > Apple could not verify “go-chrome-ai” is free of malware that may harm your Mac or compromise your privacy.
-
-然后运行：
-
-```bash
-go-chrome-ai        # 命令行模式
-go-chrome-ai gui    # 图形界面模式
-```
-
-<details>
-<summary>也可以从 GitHub Releases 直接下载二进制。</summary>
-
-当前发布包：
-
-- macOS（Apple Silicon/arm64）：`go-chrome-ai-darwin-arm64.tar.gz`
-- macOS（Intel/x86_64）：`go-chrome-ai-darwin-amd64.tar.gz`
-
-每个压缩包都只包含一个可执行文件：`go-chrome-ai`。
-
-</details>
 
 它通过修改 Chrome 本地配置来启用相关 AI 功能（如 **Ask Gemini**）：
 
@@ -94,7 +105,11 @@ GUI 功能：
 - 进度条
 - 实时日志
 
-## 构建
+## 从源码构建
+
+```bash
+make build
+```
 
 ```bash
 go build -o output/go-chrome-ai ./cmd/go-chrome-ai
