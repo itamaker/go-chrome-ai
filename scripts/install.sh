@@ -17,8 +17,9 @@ fi
 
 if [ -t 1 ]; then
     RED="$(printf '\033[0;31m')"
-    GREEN="$(printf '\033[0;32m')"
+    GREEN="$(printf '\033[38;2;23;128;68m')"
     YELLOW="$(printf '\033[1;33m')"
+    CYAN="$(printf '\033[0;36m')"
     BLUE="$(printf '\033[0;34m')"
     BOLD="$(printf '\033[1m')"
     NC="$(printf '\033[0m')"
@@ -26,6 +27,7 @@ else
     RED=''
     GREEN=''
     YELLOW=''
+    CYAN=''
     BLUE=''
     BOLD=''
     NC=''
@@ -50,6 +52,28 @@ warn() {
 error() {
     say "${RED}ERR${NC}  $1" >&2
     exit 1
+}
+
+print_banner() {
+    printf '%b' "${GREEN}${BOLD}"
+    cat <<'EOF'
+
+  ██████╗  ██████╗
+ ██╔════╝ ██╔═══██╗
+ ██║  ███╗██║   ██║
+ ██║   ██║██║   ██║
+ ╚██████╔╝╚██████╔╝
+  ╚═════╝  ╚═════╝
+
+  ██████╗██╗  ██╗██████╗  ██████╗ ███╗   ███╗███████╗      █████╗ ██╗
+ ██╔════╝██║  ██║██╔══██╗██╔═══██╗████╗ ████║██╔════╝     ██╔══██╗██║
+ ██║     ███████║██████╔╝██║   ██║██╔████╔██║█████╗       ███████║██║
+ ██║     ██╔══██║██╔══██╗██║   ██║██║╚██╔╝██║██╔══╝       ██╔══██║██║
+ ╚██████╗██║  ██║██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗     ██║  ██║██║
+  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝     ╚═╝  ╚═╝╚═╝
+
+EOF
+    printf '%b\n' "${NC}"
 }
 
 need_cmd() {
@@ -217,25 +241,27 @@ setup_path() {
 
 print_next_steps() {
     say ""
-    say "${BOLD}Quick Start${NC}"
+    say "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    say "${GREEN}${BOLD}  QUICK START${NC}"
+    say "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     say ""
-    say "  Run the CLI:"
-    say "    $BINARY_NAME"
+    say "  ${BOLD}Run the CLI:${NC}"
+    say "    ${CYAN}$BINARY_NAME${NC}"
     say ""
-    say "  Launch the GUI:"
-    say "    $BINARY_NAME gui"
+    say "  ${BOLD}Launch the GUI:${NC}"
+    say "    ${CYAN}$BINARY_NAME gui${NC}"
     say ""
-    say "  Preview changes without writing:"
-    say "    $BINARY_NAME -dry-run"
+    say "  ${BOLD}Preview changes without writing:${NC}"
+    say "    ${CYAN}$BINARY_NAME -dry-run${NC}"
     say ""
-    say "  If macOS blocks the first launch:"
-    say "    xattr -d com.apple.quarantine \"$INSTALL_PATH\""
+    say "  ${BOLD}If macOS blocks the first launch:${NC}"
+    say "    ${CYAN}xattr -d com.apple.quarantine \"$INSTALL_PATH\"${NC}"
     say ""
+    say "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
 main() {
-    say "${BOLD}go-chrome-ai Installer${NC}"
-    say ""
+    print_banner
 
     need_cmd curl
     need_cmd tar
