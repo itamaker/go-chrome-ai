@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	"go-chrome-ai/internal/chrome"
+	"github.com/itamaker/go-chrome-ai/internal/chrome"
 )
 
 func RunCLI(args []string, stderr io.Writer) int {
