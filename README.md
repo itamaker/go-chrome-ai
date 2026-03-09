@@ -28,8 +28,7 @@ curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/
 
 ```bash
 # Or install via Homebrew (custom tap)
-brew tap itamaker/tap
-brew install --cask go-chrome-ai
+brew install --cask itamaker/tap/go-chrome-ai
 ```
 
 <details>
