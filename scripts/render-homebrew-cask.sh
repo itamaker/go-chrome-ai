@@ -4,14 +4,14 @@ set -euo pipefail
 
 PROJECT="go-chrome-ai"
 DESCRIPTION="Patch Chrome Local State to enable Ask Gemini and other AI features"
-CHECKSUMS_FILE="dist/SHA256SUMS"
+CHECKSUMS_FILE="dist/checksums.txt"
 OWNER=""
 REPO="${PROJECT}"
 VERSION=""
 
 usage() {
   echo "Render a cask for https://github.com/itamaker/homebrew-tap" >&2
-  echo "Usage: $0 --owner <project-repo-owner> --version <v1.0.3> [--repo <project-repo-name>] [--checksums <path>]" >&2
+  echo "Usage: $0 --owner <project-repo-owner> --version <v1.0.4> [--repo <project-repo-name>] [--checksums <path>]" >&2
 }
 
 while [[ $# -gt 0 ]]; do
@@ -51,7 +51,7 @@ fi
 
 checksum_for() {
   local arch="$1"
-  local artifact="${PROJECT}-darwin-${arch}.tar.gz"
+  local artifact="${PROJECT}_${VERSION}_darwin_${arch}.tar.gz"
   awk -v artifact="${artifact}" '$2 == artifact { print $1 }' "${CHECKSUMS_FILE}"
 }
 
@@ -73,7 +73,7 @@ cask "${PROJECT}" do
   sha256 arm: "${darwin_arm64}",
          intel: "${darwin_amd64}"
 
-  url "https://github.com/${OWNER}/${REPO}/releases/download/v#{version}/${PROJECT}-darwin-#{arch}.tar.gz"
+  url "https://github.com/${OWNER}/${REPO}/releases/download/v#{version}/${PROJECT}_#{version}_darwin_#{arch}.tar.gz"
   name "${PROJECT}"
   desc "${DESCRIPTION}"
   homepage "https://github.com/${OWNER}/${REPO}"

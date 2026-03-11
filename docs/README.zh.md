@@ -5,37 +5,33 @@
 `go-chrome-ai` 是一个用 Go 编写的跨平台 Chrome 配置修补工具，同时支持 **CLI** 和 **GUI**。
 它可以在不重装 Chrome、不重建用户配置的情况下启用相关 AI 功能（包括 **Ask Gemini**）。
 
+![go-chrome-ai social preview](images/social-preview.png)
+
 ## Support
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/amaker)
-
-## 截图
-
-![go-chrome-ai GUI](images/go-chrome-ai-gui.png)
 
 ## Quickstart
 
 ### 安装
 
-可按你偏好的方式安装：
-
 ```bash
-# 安装最新的 macOS release
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
-```
-
-```bash
-# 或通过 Homebrew（自定义 tap）安装
 brew install --cask itamaker/tap/go-chrome-ai
 ```
 
 <details>
-<summary>也可以从 <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a> 直接下载二进制。</summary>
+<summary>也可以通过安装脚本或 <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a> 获取二进制。</summary>
+
+安装脚本：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
+```
 
 当前发布包：
 
-- macOS（Apple Silicon/arm64）：`go-chrome-ai-darwin-arm64.tar.gz`
-- macOS（Intel/x86_64）：`go-chrome-ai-darwin-amd64.tar.gz`
+- macOS（Apple Silicon/arm64）：`go-chrome-ai_1.0.4_darwin_arm64.tar.gz`
+- macOS（Intel/x86_64）：`go-chrome-ai_1.0.4_darwin_amd64.tar.gz`
 
 每个压缩包都只包含一个可执行文件：`go-chrome-ai`。
 
@@ -45,7 +41,7 @@ brew install --cask itamaker/tap/go-chrome-ai
 
 ```bash
 # 安装指定版本，并放到自定义目录
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.1 INSTALL_DIR=$HOME/bin sh
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.4 INSTALL_DIR=$HOME/bin sh
 ```
 
 如果你不希望安装器修改 shell 配置文件，可设置 `SKIP_PATH_SETUP=1`。
@@ -74,6 +70,10 @@ xattr -d com.apple.quarantine $(which go-chrome-ai)
 - 递归将 `is_glic_eligible` 设为 `true`
 - 将 `variations_country` 设为 `"us"`
 - 将 `variations_permanent_consistency_country` 设为 `["<last_version>", "us"]`（仅当该字段存在且可修改）
+
+## 截图
+
+![go-chrome-ai GUI](images/go-chrome-ai-gui.png)
 
 ## 环境要求
 

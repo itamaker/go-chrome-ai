@@ -28,13 +28,13 @@ archives:
       - go-chrome-ai
     formats:
       - tar.gz
-    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
-  name_template: SHA256SUMS
+  name_template: checksums.txt
 
 snapshot:
-  version_template: "{{ .Version }}-devel"
+  version_template: "{{ incpatch .Version }}-devel"
 
 changelog:
   sort: asc
