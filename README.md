@@ -21,14 +21,12 @@ It helps enable Chrome AI-related features, including **Ask Gemini**, without re
 brew install --cask itamaker/tap/go-chrome-ai
 ```
 
-<details>
-<summary>You can also install with the shell installer or download binaries from <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a>.</summary>
-
-Shell installer for macOS and Linux:
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
 ```
+
+<details>
+<summary>You can also download binaries from <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a>.</summary>
 
 Current release archives:
 
@@ -43,15 +41,6 @@ Each archive contains a single executable: `go-chrome-ai`.
 The macOS archives include the GUI-capable binary. Linux and Windows releases ship the CLI binary for portable installs.
 
 </details>
-
-The install script also accepts:
-
-```bash
-# Install a specific release into a custom directory
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.5 INSTALL_DIR=$HOME/bin sh
-```
-
-Set `SKIP_PATH_SETUP=1` if you do not want the installer to edit your shell profile.
 
 ### First Run
 
