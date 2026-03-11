@@ -19,14 +19,12 @@
 brew install --cask itamaker/tap/go-chrome-ai
 ```
 
-<details>
-<summary>也可以通过安装脚本或 <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a> 获取二进制。</summary>
-
-适用于 macOS 和 Linux 的安装脚本：
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
 ```
+
+<details>
+<summary>也可以通过 <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a> 获取二进制。</summary>
 
 当前发布包：
 
@@ -41,15 +39,6 @@ curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/
 macOS 发布包包含 GUI 可执行能力；Linux 和 Windows 发布包默认提供 CLI，便于直接使用。
 
 </details>
-
-安装脚本也支持：
-
-```bash
-# 安装指定版本，并放到自定义目录
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.5 INSTALL_DIR=$HOME/bin sh
-```
-
-如果你不希望安装器修改 shell 配置文件，可设置 `SKIP_PATH_SETUP=1`。
 
 ### 首次运行
 
