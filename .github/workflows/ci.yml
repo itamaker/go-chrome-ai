@@ -31,12 +31,12 @@ jobs:
       - name: Run tests
         run: go test ./...
 
-      - name: Build release archives
-        run: make release
+      - name: Build binary
+        run: go build ./cmd/go-chrome-ai
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+      - name: Check GoReleaser config
+        uses: goreleaser/goreleaser-action@v6
         with:
-          name: go-chrome-ai-${{ github.sha }}
-          path: output/release/*
-          if-no-files-found: error
+          distribution: goreleaser
+          version: "~> v2"
+          args: check

@@ -1,6 +1,7 @@
 # Build outputs
 build/
 output/
+dist/
 *.exe
 
 # Root binaries from `go build` without -o
