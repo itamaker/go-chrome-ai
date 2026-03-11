@@ -13,24 +13,24 @@ The repository includes `.github/workflows/ci.yml` to run:
 Tagging a semantic version triggers `.github/workflows/release.yml`.
 
 ```bash
-git tag v1.0.3
-git push origin v1.0.3
+git tag v1.0.4
+git push origin v1.0.4
 ```
 
-That workflow publishes release archives and `SHA256SUMS` through GoReleaser.
+That workflow publishes release archives and `checksums.txt` through GoReleaser.
 
-Published macOS assets keep the current install-compatible names:
+Published macOS assets follow the same versioned artifact pattern as the other managed repos:
 
-- `go-chrome-ai-darwin-arm64.tar.gz`
-- `go-chrome-ai-darwin-amd64.tar.gz`
-- `SHA256SUMS`
+- `go-chrome-ai_1.0.4_darwin_arm64.tar.gz`
+- `go-chrome-ai_1.0.4_darwin_amd64.tar.gz`
+- `checksums.txt`
 
 ## Homebrew Cask
 
 After the release is live:
 
 ```bash
-./scripts/render-homebrew-cask.sh --owner itamaker --version v1.0.3 > /path/to/homebrew-tap/Casks/go-chrome-ai.rb
+./scripts/render-homebrew-cask.sh --owner itamaker --version v1.0.4 > /path/to/homebrew-tap/Casks/go-chrome-ai.rb
 ```
 
 Commit the rendered file to `https://github.com/itamaker/homebrew-tap` as `Casks/go-chrome-ai.rb`.

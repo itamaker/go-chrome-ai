@@ -8,6 +8,11 @@ REPO="${REPO:-itamaker/go-chrome-ai}"
 BINARY_NAME="go-chrome-ai"
 VERSION="${VERSION:-latest}"
 SKIP_PATH_SETUP="${SKIP_PATH_SETUP:-0}"
+VERSION_TAG=""
+VERSION_NUMBER=""
+LEGACY_ARCHIVE_NAME=""
+LEGACY_DOWNLOAD_URL=""
+LEGACY_CHECKSUMS_URL=""
 
 if [ "$(id -u)" = "0" ]; then
     INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
@@ -112,15 +117,28 @@ resolve_version() {
     if [ "$VERSION" = "latest" ]; then
         latest_json="$(github_api_get "https://api.github.com/repos/$REPO/releases/latest")" || \
             error "Failed to query the latest GitHub release"
-        VERSION="$(printf '%s\n' "$latest_json" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
-        [ -n "$VERSION" ] || error "Failed to parse the latest release version"
+        VERSION_TAG="$(printf '%s\n' "$latest_json" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+        [ -n "$VERSION_TAG" ] || error "Failed to parse the latest release version"
+    else
+        case "$VERSION" in
+            v*)
+                VERSION_TAG="$VERSION"
+                ;;
+            *)
+                VERSION_TAG="v$VERSION"
+                ;;
+        esac
     fi
 
-    ARCHIVE_NAME="${BINARY_NAME}-${OS}-${ARCH}.tar.gz"
-    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/$ARCHIVE_NAME"
-    CHECKSUMS_URL="https://github.com/$REPO/releases/download/$VERSION/SHA256SUMS"
+    VERSION_NUMBER="${VERSION_TAG#v}"
+    ARCHIVE_NAME="${BINARY_NAME}_${VERSION_NUMBER}_${OS}_${ARCH}.tar.gz"
+    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION_TAG/$ARCHIVE_NAME"
+    CHECKSUMS_URL="https://github.com/$REPO/releases/download/$VERSION_TAG/checksums.txt"
+    LEGACY_ARCHIVE_NAME="${BINARY_NAME}-${OS}-${ARCH}.tar.gz"
+    LEGACY_DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION_TAG/$LEGACY_ARCHIVE_NAME"
+    LEGACY_CHECKSUMS_URL="https://github.com/$REPO/releases/download/$VERSION_TAG/SHA256SUMS"
 
-    info "Version: ${BOLD}$VERSION${NC}"
+    info "Version: ${BOLD}$VERSION_TAG${NC}"
 }
 
 create_install_dir() {
@@ -149,7 +167,7 @@ verify_checksum() {
     fi
 
     if ! curl -fsSL "$CHECKSUMS_URL" -o "$checksums_path"; then
-        warn "Skipping checksum verification: failed to download SHA256SUMS"
+        warn "Skipping checksum verification: failed to download checksums.txt"
         return 0
     fi
 
@@ -174,10 +192,16 @@ install_binary() {
     trap 'rm -rf "$tmp_dir"' EXIT HUP INT TERM
 
     archive_path="$tmp_dir/$ARCHIVE_NAME"
-    checksums_path="$tmp_dir/SHA256SUMS"
+    checksums_path="$tmp_dir/checksums.txt"
 
     info "Downloading ${BOLD}$ARCHIVE_NAME${NC}"
-    curl -fsSL "$DOWNLOAD_URL" -o "$archive_path" || error "Download failed: $DOWNLOAD_URL"
+    if ! curl -fsSL "$DOWNLOAD_URL" -o "$archive_path"; then
+        warn "Preferred archive name not found, trying legacy release naming"
+        ARCHIVE_NAME="$LEGACY_ARCHIVE_NAME"
+        DOWNLOAD_URL="$LEGACY_DOWNLOAD_URL"
+        CHECKSUMS_URL="$LEGACY_CHECKSUMS_URL"
+        curl -fsSL "$DOWNLOAD_URL" -o "$archive_path" || error "Download failed: $DOWNLOAD_URL"
+    fi
 
     verify_checksum "$archive_path" "$checksums_path"
 

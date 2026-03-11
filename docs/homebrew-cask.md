@@ -8,8 +8,9 @@ To support `brew install --cask`, publish the cask in your tap repo [`itamaker/h
 
 Upload these files to each GitHub Release:
 
-- `go-chrome-ai-darwin-arm64.tar.gz`
-- `go-chrome-ai-darwin-amd64.tar.gz`
+- `go-chrome-ai_1.0.4_darwin_arm64.tar.gz`
+- `go-chrome-ai_1.0.4_darwin_amd64.tar.gz`
+- `checksums.txt`
 
 You can generate them via:
 
@@ -24,7 +25,7 @@ Each archive should contain:
 Then update the cask:
 
 ```bash
-./scripts/render-homebrew-cask.sh --owner itamaker --version v1.0.3 > /path/to/homebrew-tap/Casks/go-chrome-ai.rb
+./scripts/render-homebrew-cask.sh --owner itamaker --version v1.0.4 > /path/to/homebrew-tap/Casks/go-chrome-ai.rb
 ```
 
 ## User install

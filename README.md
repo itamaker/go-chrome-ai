@@ -7,37 +7,33 @@ English | [中文](docs/README.zh.md)
 `go-chrome-ai` is a cross-platform Chrome profile patcher written in Go, with both **CLI** and **GUI** modes.
 It helps enable Chrome AI-related features, including **Ask Gemini**, without reinstalling Chrome or recreating your profile.
 
+![go-chrome-ai social preview](docs/images/social-preview.png)
+
 ## Support
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/amaker)
-
-## Screenshot
-
-![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
 
 ## Quickstart
 
 ### Install
 
-Install with your preferred method:
-
 ```bash
-# Install the latest macOS release
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
-```
-
-```bash
-# Or install via Homebrew (custom tap)
 brew install --cask itamaker/tap/go-chrome-ai
 ```
 
 <details>
-<summary>You can also download binaries from <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a>.</summary>
+<summary>You can also install with the shell installer or download binaries from <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a>.</summary>
+
+Shell installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
+```
 
 Current release archives:
 
-- macOS (Apple Silicon/arm64): `go-chrome-ai-darwin-arm64.tar.gz`
-- macOS (Intel/x86_64): `go-chrome-ai-darwin-amd64.tar.gz`
+- macOS (Apple Silicon/arm64): `go-chrome-ai_1.0.4_darwin_arm64.tar.gz`
+- macOS (Intel/x86_64): `go-chrome-ai_1.0.4_darwin_amd64.tar.gz`
 
 Each archive contains a single executable: `go-chrome-ai`.
 
@@ -47,7 +43,7 @@ The install script also accepts:
 
 ```bash
 # Install a specific release into a custom directory
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.1 INSTALL_DIR=$HOME/bin sh
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.4 INSTALL_DIR=$HOME/bin sh
 ```
 
 Set `SKIP_PATH_SETUP=1` if you do not want the installer to edit your shell profile.
@@ -76,6 +72,10 @@ It enables Chrome AI-related features (such as **Ask Gemini**) by patching local
 - `is_glic_eligible` (recursive) -> `true`
 - `variations_country` -> `"us"`
 - `variations_permanent_consistency_country` -> `["<last_version>", "us"]` (if field exists and is patchable)
+
+## Screenshot
+
+![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
 
 ## Requirements
 
