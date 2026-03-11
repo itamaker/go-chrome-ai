@@ -22,7 +22,7 @@ brew install --cask itamaker/tap/go-chrome-ai
 <details>
 <summary>也可以通过安装脚本或 <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a> 获取二进制。</summary>
 
-安装脚本：
+适用于 macOS 和 Linux 的安装脚本：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
@@ -30,10 +30,15 @@ curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/
 
 当前发布包：
 
-- macOS（Apple Silicon/arm64）：`go-chrome-ai_1.0.4_darwin_arm64.tar.gz`
-- macOS（Intel/x86_64）：`go-chrome-ai_1.0.4_darwin_amd64.tar.gz`
+- macOS（Apple Silicon/arm64）：`go-chrome-ai_1.0.5_darwin_arm64.tar.gz`
+- macOS（Intel/x86_64）：`go-chrome-ai_1.0.5_darwin_amd64.tar.gz`
+- Linux（arm64）：`go-chrome-ai_1.0.5_linux_arm64.tar.gz`
+- Linux（x86_64）：`go-chrome-ai_1.0.5_linux_amd64.tar.gz`
+- Windows（arm64）：`go-chrome-ai_1.0.5_windows_arm64.zip`
+- Windows（x86_64）：`go-chrome-ai_1.0.5_windows_amd64.zip`
 
 每个压缩包都只包含一个可执行文件：`go-chrome-ai`。
+macOS 发布包包含 GUI 可执行能力；Linux 和 Windows 发布包默认提供 CLI，便于直接使用。
 
 </details>
 
@@ -41,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/
 
 ```bash
 # 安装指定版本，并放到自定义目录
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.4 INSTALL_DIR=$HOME/bin sh
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.5 INSTALL_DIR=$HOME/bin sh
 ```
 
 如果你不希望安装器修改 shell 配置文件，可设置 `SKIP_PATH_SETUP=1`。
@@ -51,8 +56,8 @@ curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/
 运行：
 
 ```bash
-go-chrome-ai        # 命令行模式
-go-chrome-ai gui    # 图形界面模式
+go-chrome-ai        # 所有发布包都支持命令行模式
+go-chrome-ai gui    # macOS 发布包或源码构建支持图形界面模式
 ```
 
 在某些 macOS 系统上，首次运行下载的二进制可能会被 Gatekeeper 拦截。可执行：
@@ -97,6 +102,8 @@ go run ./cmd/go-chrome-ai
 go run ./cmd/go-chrome-ai gui
 ```
 
+Linux 和 Windows 的预编译发布包默认只包含 CLI；如果需要 Fyne GUI，请从源码构建。
+
 GUI 功能：
 
 - 自动检测已安装的 Chrome 渠道
@@ -125,8 +132,8 @@ Makefile：
 安装后的用法：
 
 ```bash
-go-chrome-ai        # 命令行模式
-go-chrome-ai gui    # 图形界面模式
+go-chrome-ai        # 所有发布包都支持命令行模式
+go-chrome-ai gui    # macOS 发布包或源码构建支持图形界面模式
 ```
 
 ## 执行流程

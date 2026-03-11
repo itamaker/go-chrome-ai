@@ -7,7 +7,7 @@ before:
     - go test ./...
 
 builds:
-  - id: go-chrome-ai
+  - id: go-chrome-ai-macos
     main: ./cmd/go-chrome-ai
     binary: go-chrome-ai
     env:
@@ -21,14 +21,38 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
+  - id: go-chrome-ai-cli
+    main: ./cmd/cli
+    binary: go-chrome-ai
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
 
 archives:
   - id: release
     ids:
-      - go-chrome-ai
+      - go-chrome-ai-macos
+      - go-chrome-ai-cli
     formats:
       - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      - PUBLISHING.md
 
 checksum:
   name_template: checksums.txt
