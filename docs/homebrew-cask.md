@@ -14,7 +14,7 @@ Upload these files to each GitHub Release:
 You can generate them via:
 
 ```bash
-make release
+make snapshot
 ```
 
 Each archive should contain:
@@ -23,8 +23,9 @@ Each archive should contain:
 
 Then update the cask:
 
-1. `version`
-2. arm64/amd64 `sha256`
+```bash
+./scripts/render-homebrew-cask.sh --owner itamaker --version v1.0.3 > /path/to/homebrew-tap/Casks/go-chrome-ai.rb
+```
 
 ## User install
 

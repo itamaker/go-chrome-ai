@@ -20,31 +20,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
-      - name: Run tests
-        run: go test ./...
-
-      - name: Build release archives
-        run: make release
-
-      - name: Upload workflow artifacts
-        uses: actions/upload-artifact@v6
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          name: go-chrome-ai-release-${{ github.ref_name }}
-          path: output/release/*
-          if-no-files-found: error
-
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          files: |
-            output/release/go-chrome-ai-darwin-arm64.tar.gz
-            output/release/go-chrome-ai-darwin-amd64.tar.gz
-            output/release/SHA256SUMS
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

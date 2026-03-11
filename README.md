@@ -119,9 +119,10 @@ go build -o output/go-chrome-ai ./cmd/go-chrome-ai
 Makefile:
 
 - `make build`
-- `make release` to generate Homebrew cask release assets in `output/release/`
+- `make release-check` to validate `.goreleaser.yaml`
+- `make snapshot` to build GoReleaser release assets into `dist/`
 
-All build artifacts are written to `output/`.
+Local build output is written to `output/`. GoReleaser packaging output is written to `dist/`.
 
 Installed binary usage:
 

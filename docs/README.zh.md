@@ -117,9 +117,10 @@ go build -o output/go-chrome-ai ./cmd/go-chrome-ai
 Makefile：
 
 - `make build`
-- `make release`：生成 Homebrew cask 需要的发布资产到 `output/release/`
+- `make release-check`：校验 `.goreleaser.yaml`
+- `make snapshot`：通过 GoReleaser 生成发布资产到 `dist/`
 
-所有构建产物统一输出到 `output/`。
+本地构建输出到 `output/`，GoReleaser 打包输出到 `dist/`。
 
 安装后的用法：
 

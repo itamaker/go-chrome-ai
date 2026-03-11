@@ -1,0 +1,44 @@
+version: 2
+
+project_name: go-chrome-ai
+
+before:
+  hooks:
+    - go test ./...
+
+builds:
+  - id: go-chrome-ai
+    main: ./cmd/go-chrome-ai
+    binary: go-chrome-ai
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+
+archives:
+  - id: release
+    ids:
+      - go-chrome-ai
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: SHA256SUMS
+
+snapshot:
+  version_template: "{{ .Version }}-devel"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
