@@ -1,4 +1,4 @@
-package app
+package guiapp
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"github.com/itamaker/go-chrome-ai/internal/chrome"
 )
 
-func RunGUI() {
+func Run() {
 	a := app.New()
 	w := a.NewWindow("go-chrome-ai")
 	w.Resize(fyne.NewSize(760, 560))

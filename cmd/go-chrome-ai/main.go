@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/itamaker/go-chrome-ai/internal/app"
+	"github.com/itamaker/go-chrome-ai/internal/guiapp"
 )
 
 func main() {
@@ -12,7 +13,7 @@ func main() {
 	if len(args) > 0 {
 		switch args[0] {
 		case "gui":
-			app.RunGUI()
+			guiapp.Run()
 			return
 		case "help", "-h", "--help":
 			printUsage()

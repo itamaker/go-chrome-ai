@@ -24,7 +24,7 @@ brew install --cask itamaker/tap/go-chrome-ai
 <details>
 <summary>You can also install with the shell installer or download binaries from <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a>.</summary>
 
-Shell installer:
+Shell installer for macOS and Linux:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | sh
@@ -32,10 +32,15 @@ curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/
 
 Current release archives:
 
-- macOS (Apple Silicon/arm64): `go-chrome-ai_1.0.4_darwin_arm64.tar.gz`
-- macOS (Intel/x86_64): `go-chrome-ai_1.0.4_darwin_amd64.tar.gz`
+- macOS (Apple Silicon/arm64): `go-chrome-ai_1.0.5_darwin_arm64.tar.gz`
+- macOS (Intel/x86_64): `go-chrome-ai_1.0.5_darwin_amd64.tar.gz`
+- Linux (arm64): `go-chrome-ai_1.0.5_linux_arm64.tar.gz`
+- Linux (x86_64): `go-chrome-ai_1.0.5_linux_amd64.tar.gz`
+- Windows (arm64): `go-chrome-ai_1.0.5_windows_arm64.zip`
+- Windows (x86_64): `go-chrome-ai_1.0.5_windows_amd64.zip`
 
 Each archive contains a single executable: `go-chrome-ai`.
+The macOS archives include the GUI-capable binary. Linux and Windows releases ship the CLI binary for portable installs.
 
 </details>
 
@@ -43,7 +48,7 @@ The install script also accepts:
 
 ```bash
 # Install a specific release into a custom directory
-curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.4 INSTALL_DIR=$HOME/bin sh
+curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/install.sh | VERSION=v1.0.5 INSTALL_DIR=$HOME/bin sh
 ```
 
 Set `SKIP_PATH_SETUP=1` if you do not want the installer to edit your shell profile.
@@ -53,8 +58,8 @@ Set `SKIP_PATH_SETUP=1` if you do not want the installer to edit your shell prof
 Run:
 
 ```bash
-go-chrome-ai        # CLI mode
-go-chrome-ai gui    # GUI mode
+go-chrome-ai        # CLI mode on every release
+go-chrome-ai gui    # GUI mode on macOS release builds or source builds
 ```
 
 On some macOS systems, Gatekeeper may block first launch for downloaded binaries. If that happens, run:
@@ -99,6 +104,8 @@ Flags:
 go run ./cmd/go-chrome-ai gui
 ```
 
+Prebuilt Linux and Windows releases are CLI-only. Build from source if you want the Fyne GUI on those platforms.
+
 The GUI includes:
 
 - auto-detection of installed Chrome channels
@@ -127,8 +134,8 @@ Local build output is written to `output/`. GoReleaser packaging output is writt
 Installed binary usage:
 
 ```bash
-go-chrome-ai        # CLI mode
-go-chrome-ai gui    # GUI mode
+go-chrome-ai        # CLI mode on every release
+go-chrome-ai gui    # GUI mode on macOS release builds or source builds
 ```
 
 ## What It Does

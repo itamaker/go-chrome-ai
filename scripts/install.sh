@@ -100,8 +100,8 @@ detect_platform() {
     OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
     case "$OS" in
         darwin) OS="darwin" ;;
-        linux) error "GitHub Releases currently publish macOS binaries only. Build from source on Linux." ;;
-        mingw*|msys*|cygwin*) error "Windows releases are not published yet. Build from source instead." ;;
+        linux) OS="linux" ;;
+        mingw*|msys*|cygwin*) error "Windows release archives are published as .zip files. Download them directly from GitHub Releases." ;;
         *) error "Unsupported OS: $OS" ;;
     esac
 
@@ -272,15 +272,21 @@ print_next_steps() {
     say "  ${BOLD}Run the CLI:${NC}"
     say "    ${CYAN}$BINARY_NAME${NC}"
     say ""
-    say "  ${BOLD}Launch the GUI:${NC}"
-    say "    ${CYAN}$BINARY_NAME gui${NC}"
-    say ""
     say "  ${BOLD}Preview changes without writing:${NC}"
     say "    ${CYAN}$BINARY_NAME -dry-run${NC}"
     say ""
-    say "  ${BOLD}If macOS blocks the first launch:${NC}"
-    say "    ${CYAN}xattr -d com.apple.quarantine \"$INSTALL_PATH\"${NC}"
-    say ""
+    if [ "$OS" = "darwin" ]; then
+        say "  ${BOLD}Launch the GUI:${NC}"
+        say "    ${CYAN}$BINARY_NAME gui${NC}"
+        say ""
+        say "  ${BOLD}If macOS blocks the first launch:${NC}"
+        say "    ${CYAN}xattr -d com.apple.quarantine \"$INSTALL_PATH\"${NC}"
+        say ""
+    else
+        say "  ${BOLD}GUI mode:${NC}"
+        say "    Build from source on Linux if you want the Fyne desktop app."
+        say ""
+    fi
     say "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 

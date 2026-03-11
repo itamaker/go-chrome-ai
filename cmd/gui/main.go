@@ -1,7 +1,7 @@
 package main
 
-import "github.com/itamaker/go-chrome-ai/internal/app"
+import "github.com/itamaker/go-chrome-ai/internal/guiapp"
 
 func main() {
-	app.RunGUI()
+	guiapp.Run()
 }
