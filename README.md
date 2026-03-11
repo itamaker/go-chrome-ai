@@ -156,3 +156,7 @@ Special thanks to **OpenAI Codex** for assisting with parts of the implementatio
 
 [author-zhaoyang]: https://github.com/itamaker
 [avatar-zhaoyang]: https://images.weserv.nl/?url=https://github.com/itamaker.png&h=120&w=120&fit=cover&mask=circle&maxage=7d
+
+## License
+
+[MIT](LICENSE)
