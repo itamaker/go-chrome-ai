@@ -8,8 +8,9 @@ import (
 
 // Options controls runtime behavior.
 type Options struct {
-	DryRun    bool
-	NoRestart bool
+	DryRun                 bool
+	NoRestart              bool
+	DisableAIModelDownload bool
 }
 
 // Callbacks allows CLI/GUI to receive status updates.
@@ -24,6 +25,8 @@ type Summary struct {
 	PatchedInstallations  int
 	SkippedInstallations  int
 	RestartedExecutables  int
+	PolicyApplied         bool
+	PolicyPath            string
 }
 
 func Run(opts Options, cb Callbacks) (Summary, error) {
@@ -73,7 +76,9 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 			continue
 		}
 
-		result, err := PatchLocalState(install.UserDataPath, lastVersion, opts.DryRun)
+		result, err := PatchLocalState(install.UserDataPath, lastVersion, opts.DryRun, PatchOptions{
+			DisableAIDownloadFlags: opts.DisableAIModelDownload,
+		})
 		if err != nil {
 			logf(fmt.Sprintf("  Error: failed to patch Local State: %v", err))
 			summary.SkippedInstallations++
@@ -89,6 +94,9 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		if result.VariationsPermanentConsistencyCountryWasPatched {
 			logf("  Patched variations_permanent_consistency_country")
 		}
+		for _, name := range result.DisabledFlags {
+			logf(fmt.Sprintf("  Disabled chrome://flags/#%s", name))
+		}
 
 		if result.Modified {
 			if opts.DryRun {
@@ -99,6 +107,25 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 			summary.PatchedInstallations++
 		} else {
 			logf("  No need to patch Local State")
+		}
+	}
+
+	if opts.DisableAIModelDownload {
+		policy, err := ApplyDisableAIDownloadPolicy(opts.DryRun)
+		switch {
+		case err != nil:
+			logf(fmt.Sprintf("Warning: failed to apply %s policy: %v", GenAIPolicyName, err))
+		case policy.Applied:
+			summary.PolicyApplied = true
+			summary.PolicyPath = policy.Location
+			if opts.DryRun {
+				logf(fmt.Sprintf("Dry-run: would set %s=1 at %s", GenAIPolicyName, policy.Location))
+			} else {
+				logf(fmt.Sprintf("Applied %s=1 at %s", GenAIPolicyName, policy.Location))
+			}
+		default:
+			summary.PolicyPath = policy.Location
+			logf(fmt.Sprintf("%s already configured (%s)", GenAIPolicyName, policy.Skipped))
 		}
 	}
 

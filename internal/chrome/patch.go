@@ -14,6 +14,12 @@ type PatchResult struct {
 	GLICEligiblePatched                             bool
 	VariationsCountryPatched                        bool
 	VariationsPermanentConsistencyCountryWasPatched bool
+	DisabledFlags                                   []string
+}
+
+// PatchOptions controls which transforms PatchLocalState applies.
+type PatchOptions struct {
+	DisableAIDownloadFlags bool
 }
 
 func ReadLastVersion(userDataPath string) (string, error) {
@@ -26,7 +32,7 @@ func ReadLastVersion(userDataPath string) (string, error) {
 }
 
 // PatchLocalState updates Local State for one Chrome profile directory.
-func PatchLocalState(userDataPath, lastVersion string, dryRun bool) (PatchResult, error) {
+func PatchLocalState(userDataPath, lastVersion string, dryRun bool, opts PatchOptions) (PatchResult, error) {
 	localStateFile := filepath.Join(userDataPath, "Local State")
 	raw, err := os.ReadFile(localStateFile)
 	if err != nil {
@@ -61,6 +67,13 @@ func PatchLocalState(userDataPath, lastVersion string, dryRun bool) (PatchResult
 				result.VariationsPermanentConsistencyCountryWasPatched = true
 				result.Modified = true
 			}
+		}
+	}
+
+	if opts.DisableAIDownloadFlags {
+		if changed := setFlagsDisabled(localState, AIDownloadFlagNames); len(changed) > 0 {
+			result.DisabledFlags = changed
+			result.Modified = true
 		}
 	}
 
