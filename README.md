@@ -5,7 +5,7 @@
 English | [中文](docs/README.zh.md)
 
 `go-chrome-ai` is a cross-platform Chrome profile patcher written in Go, with both **CLI** and **GUI** modes.
-It helps enable Chrome AI-related features, including **Ask Gemini**, without reinstalling Chrome or recreating your profile.
+It helps enable Chrome AI-related features (including **Ask Gemini**) without reinstalling Chrome or recreating your profile, and can also **block Chrome from silently downloading the on-device Gemini Nano model** (~2–4 GB) by flipping the relevant `chrome://flags` and applying Google's [`GenAILocalFoundationalModelSettings`](https://chromeenterprise.google/policies/gen-ai-local-foundational-model-settings/) Enterprise policy.
 
 ![go-chrome-ai social preview](docs/images/social-preview.png)
 
@@ -67,6 +67,17 @@ It enables Chrome AI-related features (such as **Ask Gemini**) by patching local
 - `variations_country` -> `"us"`
 - `variations_permanent_consistency_country` -> `["<last_version>", "us"]` (if field exists and is patchable)
 
+It can also **block on-device AI model downloads** (Gemini Nano), which is the default in both CLI and GUI. The block applies three changes:
+
+- `chrome://flags/#optimization-guide-on-device-model` -> Disabled
+- `chrome://flags/#prompt-api-for-gemini-nano` -> Disabled
+- `GenAILocalFoundationalModelSettings = 1` written to the OS managed-policy store
+  - macOS: `defaults write com.google.Chrome GenAILocalFoundationalModelSettings -int 1`
+  - Linux: `/etc/opt/chrome/policies/managed/go-chrome-ai.json` (needs sudo)
+  - Windows: `HKLM\Software\Policies\Google\Chrome` REG_DWORD
+
+Because the third change is an Enterprise policy, Chrome will display the "managed by your organization" banner afterwards. Pass `-disable-ai-download=false` (CLI) or untick the option (GUI) if you do not want that.
+
 ## Screenshot
 
 ![go-chrome-ai GUI](docs/images/go-chrome-ai-gui.png)
@@ -86,6 +97,7 @@ Flags:
 
 - `-dry-run`: show changes without writing files or killing Chrome
 - `-no-restart`: patch but do not restart Chrome
+- `-disable-ai-download` (default `true`): block on-device AI model downloads by disabling the relevant `chrome://flags` entries and writing `GenAILocalFoundationalModelSettings=1` to the OS managed-policy store. Use `-disable-ai-download=false` to skip.
 
 ## Run GUI
 
@@ -98,9 +110,11 @@ Prebuilt Linux and Windows releases are CLI-only. Build from source if you want 
 The GUI includes:
 
 - auto-detection of installed Chrome channels
+- left/right split layout (configuration on the left, run controls + logs on the right)
 - one-click patch flow
 - progress bar
 - real-time logs
+- a "Disable on-device AI model download" toggle that previews the exact `chrome://flags` and `chrome://policy` changes before you press Run
 
 ## Build From Source
 

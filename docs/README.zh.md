@@ -3,7 +3,7 @@
 [English](../README.md) | 中文
 
 `go-chrome-ai` 是一个用 Go 编写的跨平台 Chrome 配置修补工具，同时支持 **CLI** 和 **GUI**。
-它可以在不重装 Chrome、不重建用户配置的情况下启用相关 AI 功能（包括 **Ask Gemini**）。
+它可以在不重装 Chrome、不重建用户配置的情况下启用相关 AI 功能（包括 **Ask Gemini**），也可以通过翻转相关的 `chrome://flags` 配合 Google 官方的 [`GenAILocalFoundationalModelSettings`](https://chromeenterprise.google/policies/gen-ai-local-foundational-model-settings/) 企业策略，**阻止 Chrome 静默下载 Gemini Nano 本地大模型**（约 2–4 GB）。
 
 ![go-chrome-ai social preview](images/social-preview.png)
 
@@ -65,6 +65,17 @@ xattr -d com.apple.quarantine $(which go-chrome-ai)
 - 将 `variations_country` 设为 `"us"`
 - 将 `variations_permanent_consistency_country` 设为 `["<last_version>", "us"]`（仅当该字段存在且可修改）
 
+同时还可以**阻止 Chrome 下载本地 AI 模型**（Gemini Nano），CLI 与 GUI 都默认开启。该行为会做三件事：
+
+- `chrome://flags/#optimization-guide-on-device-model` -> Disabled
+- `chrome://flags/#prompt-api-for-gemini-nano` -> Disabled
+- `GenAILocalFoundationalModelSettings = 1` 写入系统受管策略存储
+  - macOS：`defaults write com.google.Chrome GenAILocalFoundationalModelSettings -int 1`
+  - Linux：`/etc/opt/chrome/policies/managed/go-chrome-ai.json`（需要 sudo）
+  - Windows：`HKLM\Software\Policies\Google\Chrome` REG_DWORD
+
+第三步属于企业策略，Chrome 之后会显示「由贵组织管理」横幅。如果你不希望出现该横幅，可以在 CLI 中加 `-disable-ai-download=false`，或在 GUI 中取消勾选该选项。
+
 ## 截图
 
 ![go-chrome-ai GUI](images/go-chrome-ai-gui.png)
@@ -84,6 +95,7 @@ go run ./cmd/go-chrome-ai
 
 - `-dry-run`：只显示将修改的内容，不写入文件，也不关闭 Chrome
 - `-no-restart`：修补后不重启 Chrome
+- `-disable-ai-download`（默认 `true`）：阻止本地 AI 模型下载——禁用相关的 `chrome://flags` 并向系统受管策略存储写入 `GenAILocalFoundationalModelSettings=1`。使用 `-disable-ai-download=false` 可跳过
 
 ## 运行 GUI
 
@@ -96,9 +108,11 @@ Linux 和 Windows 的预编译发布包默认只包含 CLI；如果需要 Fyne G
 GUI 功能：
 
 - 自动检测已安装的 Chrome 渠道
+- 左右分栏布局（左侧参数配置，右侧执行控件 + 日志）
 - 一键修补
 - 进度条
 - 实时日志
+- 「Disable on-device AI model download」开关，会在执行前预览将要应用到 `chrome://flags` 与 `chrome://policy` 的具体改动
 
 ## 从源码构建
 
