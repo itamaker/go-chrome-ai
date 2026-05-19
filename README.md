@@ -28,15 +28,6 @@ curl -fsSL https://raw.githubusercontent.com/itamaker/go-chrome-ai/main/scripts/
 <details>
 <summary>You can also download binaries from <a href="https://github.com/itamaker/go-chrome-ai/releases">GitHub Releases</a>.</summary>
 
-Current release archives:
-
-- macOS (Apple Silicon/arm64): `go-chrome-ai_1.0.5_darwin_arm64.tar.gz`
-- macOS (Intel/x86_64): `go-chrome-ai_1.0.5_darwin_amd64.tar.gz`
-- Linux (arm64): `go-chrome-ai_1.0.5_linux_arm64.tar.gz`
-- Linux (x86_64): `go-chrome-ai_1.0.5_linux_amd64.tar.gz`
-- Windows (arm64): `go-chrome-ai_1.0.5_windows_arm64.zip`
-- Windows (x86_64): `go-chrome-ai_1.0.5_windows_amd64.zip`
-
 Each archive contains a single executable: `go-chrome-ai`.
 The macOS archives include the GUI-capable binary. Linux and Windows releases ship the CLI binary for portable installs.
 
