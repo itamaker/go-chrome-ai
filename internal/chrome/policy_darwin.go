@@ -13,8 +13,11 @@ import (
 // supported user-mode way to set policies without an MDM profile.
 const macChromeDefaultsDomain = "com.google.Chrome"
 
-func policyStorageDescription() string {
-	return "macOS: defaults write " + macChromeDefaultsDomain + " " + GenAIPolicyName + " -int 1"
+func policyStorageDescription(applying bool) string {
+	if applying {
+		return "macOS: defaults write " + macChromeDefaultsDomain + " " + GenAIPolicyName + " -int 1"
+	}
+	return "macOS: defaults delete " + macChromeDefaultsDomain + " " + GenAIPolicyName
 }
 
 func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
@@ -32,6 +35,24 @@ func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
 	cmd := exec.Command("defaults", "write", macChromeDefaultsDomain, GenAIPolicyName, "-int", "1")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return PolicyResult{}, fmt.Errorf("defaults write failed: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	return PolicyResult{Applied: true, Location: location}, nil
+}
+
+func removeDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
+	location := fmt.Sprintf("defaults domain %s (%s)", macChromeDefaultsDomain, GenAIPolicyName)
+
+	if _, err := readMacPolicy(); err != nil {
+		return PolicyResult{Applied: false, Location: location, Skipped: "not set"}, nil
+	}
+
+	if dryRun {
+		return PolicyResult{Applied: true, Location: location}, nil
+	}
+
+	cmd := exec.Command("defaults", "delete", macChromeDefaultsDomain, GenAIPolicyName)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return PolicyResult{}, fmt.Errorf("defaults delete failed: %w: %s", err, strings.TrimSpace(string(out)))
 	}
 	return PolicyResult{Applied: true, Location: location}, nil
 }

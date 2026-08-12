@@ -20,3 +20,11 @@ type PolicyResult struct {
 func ApplyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
 	return applyDisableAIDownloadPolicy(dryRun)
 }
+
+// RemoveDisableAIDownloadPolicy removes GenAILocalFoundationalModelSettings
+// from the platform's Chrome managed-policy store, reverting Chrome to its
+// unmanaged default (no "managed by your organization" banner from this
+// policy).
+func RemoveDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
+	return removeDisableAIDownloadPolicy(dryRun)
+}

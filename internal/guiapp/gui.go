@@ -55,10 +55,8 @@ func Run() {
 	listScroll.SetMinSize(fyne.NewSize(0, 110))
 	installsCard := widget.NewCard("Chrome installations", "", listScroll)
 
-	// ---- options card: disable-AI checkbox + structured action breakdown
-	disableAICheck := widget.NewCheck(
-		"Disable on-device AI model download (Gemini Nano)", nil)
-	disableAICheck.SetChecked(true)
+	// ---- options card: one checkbox per chrome://flags entry, a "select
+	// all" master switch, and a live preview of the resulting changes.
 
 	// wrapLabel creates a label that can wrap to its parent's width instead
 	// of forcing it (which would prevent the HSplit divider from being dragged).
@@ -68,43 +66,96 @@ func Run() {
 		return lbl
 	}
 
-	flagsHeader := wrapLabel("Local flag overrides (chrome://flags)", fyne.TextStyle{Bold: true})
-	policyHeader := wrapLabel("Enterprise policy (chrome://policy)", fyne.TextStyle{Bold: true})
+	selectAllCheck := widget.NewCheck("Select all", nil)
 
-	var flagRows, policyRows []fyne.CanvasObject
-	for _, action := range chrome.DisableAIDownloadActions() {
-		if action.EnterprisePolicy {
-			policyRows = append(policyRows, wrapLabel("  • "+action.Label, fyne.TextStyle{}))
-			if action.Detail != "" {
-				policyRows = append(policyRows,
-					wrapLabel("       "+action.Detail, fyne.TextStyle{Monospace: true}))
+	flagChecks := make([]*widget.Check, len(chrome.AvailableAIDownloadFlags))
+	for i, f := range chrome.AvailableAIDownloadFlags {
+		flagChecks[i] = widget.NewCheck(f.Name, nil)
+	}
+	policyCheck := widget.NewCheck(chrome.GenAIPolicyName, nil)
+
+	actionBox := container.NewVBox()
+
+	selectedFlagNames := func() []string {
+		var names []string
+		for i, c := range flagChecks {
+			if c.Checked {
+				names = append(names, chrome.AvailableAIDownloadFlags[i].Name)
 			}
-			if action.PolicyNote != "" {
-				policyRows = append(policyRows,
-					wrapLabel("       ! "+action.PolicyNote, fyne.TextStyle{Italic: true}))
-			}
-			continue
 		}
-		flagRows = append(flagRows, wrapLabel("  • "+action.Label, fyne.TextStyle{}))
+		return names
 	}
 
-	actionBox := container.NewVBox(
-		flagsHeader,
-		container.NewVBox(flagRows...),
-		widget.NewSeparator(),
-		policyHeader,
-		container.NewVBox(policyRows...),
-	)
+	updateActionBox := func() {
+		actions := chrome.DisableAIDownloadActions(selectedFlagNames(), policyCheck.Checked)
+		applyFlags, revertFlags, policyActions := chrome.GroupDisableAIDownloadActions(actions)
 
-	disableAICheck.OnChanged = func(checked bool) {
+		var objs []fyne.CanvasObject
+		addSection := func(title string, items []chrome.DisableAIDownloadAction) {
+			if len(items) == 0 {
+				return
+			}
+			if len(objs) > 0 {
+				objs = append(objs, widget.NewSeparator())
+			}
+			objs = append(objs, wrapLabel(title, fyne.TextStyle{Bold: true}))
+			for _, action := range items {
+				objs = append(objs, wrapLabel("  • "+action.Label, fyne.TextStyle{}))
+				if action.Detail != "" {
+					objs = append(objs, wrapLabel("       "+action.Detail, fyne.TextStyle{Monospace: true}))
+				}
+				if action.PolicyNote != "" {
+					objs = append(objs, wrapLabel("       ! "+action.PolicyNote, fyne.TextStyle{Italic: true}))
+				}
+			}
+		}
+		addSection("Local flag overrides (chrome://flags)", applyFlags)
+		addSection("Local flag resets (chrome://flags)", revertFlags)
+		addSection("Enterprise policy (chrome://policy)", policyActions)
+
+		actionBox.Objects = objs
+		actionBox.Refresh()
+	}
+
+	// select-all is the master switch: checking it selects every flag plus
+	// the policy and locks their checkboxes; unchecking it hands control
+	// back so each can be toggled independently.
+	selectAllCheck.OnChanged = func(checked bool) {
+		for _, c := range flagChecks {
+			if checked {
+				c.SetChecked(true)
+				c.Disable()
+			} else {
+				c.Enable()
+			}
+		}
 		if checked {
-			actionBox.Show()
+			policyCheck.SetChecked(true)
+			policyCheck.Disable()
 		} else {
-			actionBox.Hide()
+			policyCheck.Enable()
 		}
+		updateActionBox()
 	}
-	optionsCard := widget.NewCard("Options", "",
-		container.NewVBox(disableAICheck, widget.NewSeparator(), actionBox))
+	for _, c := range flagChecks {
+		c.OnChanged = func(bool) { updateActionBox() }
+	}
+	policyCheck.OnChanged = func(bool) { updateActionBox() }
+	selectAllCheck.SetChecked(true)
+	updateActionBox()
+
+	flagsBox := container.NewVBox()
+	for _, c := range flagChecks {
+		flagsBox.Add(c)
+	}
+	flagsBox.Add(policyCheck)
+
+	optionsCard := widget.NewCard("Options", "", container.NewVBox(
+		selectAllCheck,
+		flagsBox,
+		widget.NewSeparator(),
+		actionBox,
+	))
 
 	// ---- run card: progress + Run button stacked, sits on the right column
 	progress := widget.NewProgressBar()
@@ -135,7 +186,10 @@ func Run() {
 		progress.SetValue(0)
 		fyne.Do(func() { logBox.SetText("") })
 
-		opts := chrome.Options{DisableAIModelDownload: disableAICheck.Checked}
+		opts := chrome.Options{
+			AIDownloadFlags:  selectedFlagNames(),
+			AIDownloadPolicy: policyCheck.Checked,
+		}
 
 		go func() {
 			summary, runErr := chrome.Run(opts, chrome.Callbacks{

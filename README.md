@@ -67,7 +67,9 @@ It can also **block on-device AI model downloads** (Gemini Nano), which is the d
   - Linux: `/etc/opt/chrome/policies/managed/go-chrome-ai.json` (needs sudo)
   - Windows: `HKLM\Software\Policies\Google\Chrome` REG_DWORD
 
-Because the third change is an Enterprise policy, Chrome will display the "managed by your organization" banner afterwards. Pass `-disable-ai-download=false` (CLI) or untick the option (GUI) if you do not want that.
+Because the third change is an Enterprise policy, Chrome will display the "managed by your organization" banner afterwards. All three are independently selectable options — the two `chrome://flags` entries (CLI: `-disable-flag`, GUI: per-flag checkboxes) and the `chrome://policy` write (CLI: `-disable-ai-policy`, GUI: policy checkbox) — or all three at once via the "select all" option (CLI: `-disable-ai-download`, GUI: "Select all" checkbox, both default on). Turn off `-disable-ai-download` (CLI) or "Select all" (GUI) to pick and choose, e.g. to disable the flags without triggering the Enterprise-policy banner, or vice versa.
+
+Every run fully syncs Chrome to the current selection, in both directions: a selected item is applied (flag forced to Disabled / policy written), and a **deselected item is actively reverted** — its `chrome://flags` override is removed (back to Chrome's default) and the `chrome://policy` entry is deleted from the OS managed-policy store, if either was previously set by this tool. Unchecking an option is not a no-op; it undoes that option's effect on the next run.
 
 ## Screenshot
 
@@ -88,7 +90,9 @@ Flags:
 
 - `-dry-run`: show changes without writing files or killing Chrome
 - `-no-restart`: patch but do not restart Chrome
-- `-disable-ai-download` (default `true`): block on-device AI model downloads by disabling the relevant `chrome://flags` entries and writing `GenAILocalFoundationalModelSettings=1` to the OS managed-policy store. Use `-disable-ai-download=false` to skip.
+- `-disable-ai-download` (default `true`): "select all" — block on-device AI model downloads by disabling every known `chrome://flags` entry and writing `GenAILocalFoundationalModelSettings=1` to the OS managed-policy store. Use `-disable-ai-download=false` to pick individually with `-disable-flag` and/or `-disable-ai-policy` instead.
+- `-disable-flag <name>` (repeatable): disable one specific `chrome://flags` entry by name (e.g. `optimization-guide-on-device-model`, `prompt-api-for-gemini-nano`). Only takes effect when `-disable-ai-download=false`.
+- `-disable-ai-policy` (default `true`): write the `GenAILocalFoundationalModelSettings` Enterprise policy, independent of which flags are selected. Only takes effect when `-disable-ai-download=false`.
 
 ## Run GUI
 
@@ -105,7 +109,7 @@ The GUI includes:
 - one-click patch flow
 - progress bar
 - real-time logs
-- a "Disable on-device AI model download" toggle that previews the exact `chrome://flags` and `chrome://policy` changes before you press Run
+- a checkbox per `chrome://flags` entry, a checkbox for the `chrome://policy` write, and a "Select all" master switch over both (checking it selects and locks everything; uncheck it to pick items individually), with a live preview of the exact changes before you press Run
 
 ## Build From Source
 
