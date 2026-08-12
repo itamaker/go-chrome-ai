@@ -16,8 +16,12 @@ const linuxManagedPolicyDir = "/etc/opt/chrome/policies/managed"
 
 const linuxPolicyFileName = "go-chrome-ai.json"
 
-func policyStorageDescription() string {
-	return "Linux: " + linuxManagedPolicyDir + "/" + linuxPolicyFileName + " (requires sudo)"
+func policyStorageDescription(applying bool) string {
+	verb := "write"
+	if !applying {
+		verb = "remove"
+	}
+	return "Linux: " + verb + " " + linuxManagedPolicyDir + "/" + linuxPolicyFileName + " (requires sudo)"
 }
 
 func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
@@ -45,6 +49,23 @@ func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
 
 	if err := os.WriteFile(target, encoded, 0o644); err != nil {
 		return PolicyResult{}, fmt.Errorf("write %s failed (sudo required?): %w", target, err)
+	}
+	return PolicyResult{Applied: true, Location: target}, nil
+}
+
+func removeDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
+	target := filepath.Join(linuxManagedPolicyDir, linuxPolicyFileName)
+
+	if _, err := os.Stat(target); err != nil {
+		return PolicyResult{Applied: false, Location: target, Skipped: "not set"}, nil
+	}
+
+	if dryRun {
+		return PolicyResult{Applied: true, Location: target}, nil
+	}
+
+	if err := os.Remove(target); err != nil {
+		return PolicyResult{}, fmt.Errorf("remove %s failed (sudo required?): %w", target, err)
 	}
 	return PolicyResult{Applied: true, Location: target}, nil
 }

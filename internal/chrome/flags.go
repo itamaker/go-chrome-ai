@@ -7,47 +7,108 @@ import "strings"
 // `<flag-name>@<choice>` where 0=Default, 1=Enabled, 2=Disabled.
 const flagDisabledSuffix = "@2"
 
-// AIDownloadFlagNames are the chrome://flags entries this tool forces to
+// AIDownloadFlag describes one chrome://flags entry this tool can force to
 // "Disabled" so Chrome does not download Gemini Nano / on-device models.
-var AIDownloadFlagNames = []string{
-	"optimization-guide-on-device-model",
-	"prompt-api-for-gemini-nano",
+type AIDownloadFlag struct {
+	Name string // chrome://flags entry name
 }
 
-// DisableAIDownloadAction describes one transform applied by the
+// AvailableAIDownloadFlags lists every chrome://flags entry this tool knows
+// how to disable. Callers (CLI/GUI) present each one as an individually
+// selectable option, plus a "select all" convenience over this same list.
+var AvailableAIDownloadFlags = []AIDownloadFlag{
+	{Name: "optimization-guide-on-device-model"},
+	{Name: "prompt-api-for-gemini-nano"},
+}
+
+// AllAIDownloadFlagNames returns the names of every available AI-download
+// flag, i.e. the set selected by a "select all" option.
+func AllAIDownloadFlagNames() []string {
+	names := make([]string, len(AvailableAIDownloadFlags))
+	for i, f := range AvailableAIDownloadFlags {
+		names[i] = f.Name
+	}
+	return names
+}
+
+// DisableAIDownloadAction describes one transform previewed/applied by the
 // "disable AI model download" feature.
 type DisableAIDownloadAction struct {
 	Label            string // human-readable label, e.g. "chrome://flags/#foo -> Disabled"
 	Detail           string // optional second line (e.g. policy storage location)
-	EnterprisePolicy bool   // true if the action writes a managed Chrome policy
+	EnterprisePolicy bool   // true if the action reads/writes the managed Chrome policy
 	PolicyNote       string // extra warning shown when EnterprisePolicy is true
+	Revert           bool   // true if this action undoes a previous change instead of applying one
 }
 
-// DisableAIDownloadActions returns the ordered list of changes applied when
-// the user enables "disable AI model download". The last entry is an
-// Enterprise policy write that causes Chrome to display the
-// "managed by your organization" banner.
-func DisableAIDownloadActions() []DisableAIDownloadAction {
-	actions := make([]DisableAIDownloadAction, 0, len(AIDownloadFlagNames)+1)
-	for _, name := range AIDownloadFlagNames {
+// DisableAIDownloadActions returns one action per managed item — every entry
+// in AvailableAIDownloadFlags plus the Enterprise policy — describing
+// whether it will be applied (selected / includePolicy) or reverted to
+// Chrome's default (not selected / !includePolicy). The policy is
+// independent of which flags are selected.
+func DisableAIDownloadActions(selectedFlags []string, includePolicy bool) []DisableAIDownloadAction {
+	selected := make(map[string]bool, len(selectedFlags))
+	for _, name := range selectedFlags {
+		selected[name] = true
+	}
+
+	actions := make([]DisableAIDownloadAction, 0, len(AvailableAIDownloadFlags)+1)
+	for _, f := range AvailableAIDownloadFlags {
+		if selected[f.Name] {
+			actions = append(actions, DisableAIDownloadAction{
+				Label: "chrome://flags/#" + f.Name + " -> Disabled",
+			})
+			continue
+		}
 		actions = append(actions, DisableAIDownloadAction{
-			Label: "chrome://flags/#" + name + " -> Disabled",
+			Label:  "chrome://flags/#" + f.Name + " -> Default (reset)",
+			Revert: true,
 		})
 	}
-	actions = append(actions, DisableAIDownloadAction{
-		Label:            GenAIPolicyName + " = 1 (Disabled)",
-		Detail:           policyStorageDescription(),
-		EnterprisePolicy: true,
-		PolicyNote:       `Chrome will show the "managed by your organization" banner`,
-	})
+
+	if includePolicy {
+		actions = append(actions, DisableAIDownloadAction{
+			Label:            GenAIPolicyName + " = 1 (Disabled)",
+			Detail:           policyStorageDescription(true),
+			EnterprisePolicy: true,
+			PolicyNote:       `Chrome will show the "managed by your organization" banner`,
+		})
+	} else {
+		actions = append(actions, DisableAIDownloadAction{
+			Label:            GenAIPolicyName + " removed (reset to default)",
+			Detail:           policyStorageDescription(false),
+			EnterprisePolicy: true,
+			PolicyNote:       `Removes the "managed by your organization" banner, if shown`,
+			Revert:           true,
+		})
+	}
 	return actions
 }
 
+// GroupDisableAIDownloadActions splits actions (as returned by
+// DisableAIDownloadActions) into three buckets for display: chrome://flags
+// entries to apply, chrome://flags entries to revert, and the Enterprise
+// policy action (apply or revert).
+func GroupDisableAIDownloadActions(actions []DisableAIDownloadAction) (applyFlags, revertFlags, policy []DisableAIDownloadAction) {
+	for _, a := range actions {
+		switch {
+		case a.EnterprisePolicy:
+			policy = append(policy, a)
+		case a.Revert:
+			revertFlags = append(revertFlags, a)
+		default:
+			applyFlags = append(applyFlags, a)
+		}
+	}
+	return applyFlags, revertFlags, policy
+}
 
-// setFlagsDisabled rewrites browser.enabled_labs_experiments so each requested
-// flag appears exactly once with the Disabled choice (@2). Returns the list
-// of flag names whose state actually changed.
-func setFlagsDisabled(localState map[string]any, flags []string) []string {
+// syncManagedFlags rewrites browser.enabled_labs_experiments so every flag
+// in managed is Disabled (@2) when it also appears in selected, or has any
+// existing override removed (reverted to Chrome's default) when it does
+// not. Flags outside managed are left untouched. Returns the flags that
+// were newly disabled and the flags whose override was removed.
+func syncManagedFlags(localState map[string]any, managed, selected []string) (disabled, reverted []string) {
 	browser, _ := localState["browser"].(map[string]any)
 	if browser == nil {
 		browser = map[string]any{}
@@ -62,38 +123,51 @@ func setFlagsDisabled(localState map[string]any, flags []string) []string {
 		}
 	}
 
-	targets := make(map[string]bool, len(flags))
-	for _, name := range flags {
-		targets[name] = true
+	isManaged := make(map[string]bool, len(managed))
+	for _, name := range managed {
+		isManaged[name] = true
+	}
+	isSelected := make(map[string]bool, len(selected))
+	for _, name := range selected {
+		isSelected[name] = true
 	}
 
 	kept := make([]string, 0, len(existing))
-	alreadyDisabled := make(map[string]bool, len(flags))
+	alreadyDisabled := make(map[string]bool, len(selected))
+	wasPresent := make(map[string]bool, len(managed))
 	for _, entry := range existing {
 		name := entry
 		if idx := strings.IndexByte(entry, '@'); idx >= 0 {
 			name = entry[:idx]
 		}
-		if targets[name] {
-			if entry == name+flagDisabledSuffix && !alreadyDisabled[name] {
-				alreadyDisabled[name] = true
-				kept = append(kept, entry)
-			}
+		if !isManaged[name] {
+			kept = append(kept, entry)
 			continue
 		}
-		kept = append(kept, entry)
-	}
-
-	changed := make([]string, 0, len(flags))
-	for _, name := range flags {
-		if !alreadyDisabled[name] {
-			kept = append(kept, name+flagDisabledSuffix)
-			changed = append(changed, name)
+		wasPresent[name] = true
+		if !isSelected[name] {
+			continue // revert: drop the existing override entirely
+		}
+		if entry == name+flagDisabledSuffix && !alreadyDisabled[name] {
+			alreadyDisabled[name] = true
+			kept = append(kept, entry)
 		}
 	}
 
-	if len(changed) == 0 && len(kept) == len(existing) {
-		return nil
+	for _, name := range selected {
+		if !alreadyDisabled[name] {
+			kept = append(kept, name+flagDisabledSuffix)
+			disabled = append(disabled, name)
+		}
+	}
+	for _, name := range managed {
+		if !isSelected[name] && wasPresent[name] {
+			reverted = append(reverted, name)
+		}
+	}
+
+	if len(disabled) == 0 && len(reverted) == 0 && len(kept) == len(existing) {
+		return nil, nil
 	}
 
 	next := make([]any, len(kept))
@@ -101,5 +175,5 @@ func setFlagsDisabled(localState map[string]any, flags []string) []string {
 		next[i] = s
 	}
 	browser["enabled_labs_experiments"] = next
-	return changed
+	return disabled, reverted
 }

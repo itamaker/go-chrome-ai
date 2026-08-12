@@ -8,9 +8,18 @@ import (
 
 // Options controls runtime behavior.
 type Options struct {
-	DryRun                 bool
-	NoRestart              bool
-	DisableAIModelDownload bool
+	DryRun    bool
+	NoRestart bool
+	// AIDownloadFlags is the set of chrome://flags entries (from
+	// AvailableAIDownloadFlags) to force Disabled. Any managed flag not in
+	// this set has its override removed (reverted to Chrome's default) if
+	// present.
+	AIDownloadFlags []string
+	// AIDownloadPolicy, when true, writes the
+	// GenAILocalFoundationalModelSettings Enterprise policy; when false, it
+	// removes the policy if present (reverting to Chrome's unmanaged
+	// default). Independent of AIDownloadFlags.
+	AIDownloadPolicy bool
 }
 
 // Callbacks allows CLI/GUI to receive status updates.
@@ -26,6 +35,7 @@ type Summary struct {
 	SkippedInstallations  int
 	RestartedExecutables  int
 	PolicyApplied         bool
+	PolicyReverted        bool
 	PolicyPath            string
 }
 
@@ -77,7 +87,7 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		}
 
 		result, err := PatchLocalState(install.UserDataPath, lastVersion, opts.DryRun, PatchOptions{
-			DisableAIDownloadFlags: opts.DisableAIModelDownload,
+			AIDownloadFlags: opts.AIDownloadFlags,
 		})
 		if err != nil {
 			logf(fmt.Sprintf("  Error: failed to patch Local State: %v", err))
@@ -97,6 +107,9 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		for _, name := range result.DisabledFlags {
 			logf(fmt.Sprintf("  Disabled chrome://flags/#%s", name))
 		}
+		for _, name := range result.RevertedFlags {
+			logf(fmt.Sprintf("  Reverted chrome://flags/#%s to default", name))
+		}
 
 		if result.Modified {
 			if opts.DryRun {
@@ -110,7 +123,7 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		}
 	}
 
-	if opts.DisableAIModelDownload {
+	if opts.AIDownloadPolicy {
 		policy, err := ApplyDisableAIDownloadPolicy(opts.DryRun)
 		switch {
 		case err != nil:
@@ -126,6 +139,23 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		default:
 			summary.PolicyPath = policy.Location
 			logf(fmt.Sprintf("%s already configured (%s)", GenAIPolicyName, policy.Skipped))
+		}
+	} else {
+		policy, err := RemoveDisableAIDownloadPolicy(opts.DryRun)
+		switch {
+		case err != nil:
+			logf(fmt.Sprintf("Warning: failed to remove %s policy: %v", GenAIPolicyName, err))
+		case policy.Applied:
+			summary.PolicyReverted = true
+			summary.PolicyPath = policy.Location
+			if opts.DryRun {
+				logf(fmt.Sprintf("Dry-run: would remove %s from %s", GenAIPolicyName, policy.Location))
+			} else {
+				logf(fmt.Sprintf("Removed %s from %s", GenAIPolicyName, policy.Location))
+			}
+		default:
+			summary.PolicyPath = policy.Location
+			logf(fmt.Sprintf("%s already absent (%s)", GenAIPolicyName, policy.Skipped))
 		}
 	}
 

@@ -15,11 +15,16 @@ type PatchResult struct {
 	VariationsCountryPatched                        bool
 	VariationsPermanentConsistencyCountryWasPatched bool
 	DisabledFlags                                   []string
+	RevertedFlags                                   []string
 }
 
 // PatchOptions controls which transforms PatchLocalState applies.
 type PatchOptions struct {
-	DisableAIDownloadFlags bool
+	// AIDownloadFlags is the set of chrome://flags entry names (from
+	// AvailableAIDownloadFlags) to force to Disabled. Any managed flag not
+	// in this set has its override removed (reverted to Chrome's default)
+	// if present.
+	AIDownloadFlags []string
 }
 
 func ReadLastVersion(userDataPath string) (string, error) {
@@ -70,11 +75,10 @@ func PatchLocalState(userDataPath, lastVersion string, dryRun bool, opts PatchOp
 		}
 	}
 
-	if opts.DisableAIDownloadFlags {
-		if changed := setFlagsDisabled(localState, AIDownloadFlagNames); len(changed) > 0 {
-			result.DisabledFlags = changed
-			result.Modified = true
-		}
+	if disabled, reverted := syncManagedFlags(localState, AllAIDownloadFlagNames(), opts.AIDownloadFlags); len(disabled) > 0 || len(reverted) > 0 {
+		result.DisabledFlags = disabled
+		result.RevertedFlags = reverted
+		result.Modified = true
 	}
 
 	if !result.Modified || dryRun {

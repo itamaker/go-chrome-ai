@@ -14,8 +14,11 @@ import (
 // process; HKLM is preferred when running elevated.
 const winRegPath = `Software\Policies\Google\Chrome`
 
-func policyStorageDescription() string {
-	return `Windows: HKLM\` + winRegPath + `\` + GenAIPolicyName + " (REG_DWORD = 1)"
+func policyStorageDescription(applying bool) string {
+	if applying {
+		return `Windows: HKLM\` + winRegPath + `\` + GenAIPolicyName + " (REG_DWORD = 1)"
+	}
+	return `Windows: delete HKLM\` + winRegPath + `\` + GenAIPolicyName
 }
 
 func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
@@ -39,6 +42,29 @@ func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
 	)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return PolicyResult{}, fmt.Errorf("reg add failed: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	return PolicyResult{Applied: true, Location: target}, nil
+}
+
+func removeDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
+	hive := pickWindowsHive()
+	target := fmt.Sprintf(`%s\%s\%s`, hive, winRegPath, GenAIPolicyName)
+
+	if _, err := readWindowsPolicy(hive); err != nil {
+		return PolicyResult{Applied: false, Location: target, Skipped: "not set"}, nil
+	}
+
+	if dryRun {
+		return PolicyResult{Applied: true, Location: target}, nil
+	}
+
+	cmd := exec.Command(
+		"reg", "delete", fmt.Sprintf(`%s\%s`, hive, winRegPath),
+		"/v", GenAIPolicyName,
+		"/f",
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return PolicyResult{}, fmt.Errorf("reg delete failed: %w: %s", err, strings.TrimSpace(string(out)))
 	}
 	return PolicyResult{Applied: true, Location: target}, nil
 }
