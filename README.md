@@ -2,8 +2,6 @@
 
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
 
-English | [中文](docs/README.zh.md)
-
 `go-chrome-ai` is a cross-platform Chrome profile patcher written in Go, with both **CLI** and **GUI** modes.
 It helps enable Chrome AI-related features (including **Ask Gemini**) without reinstalling Chrome or recreating your profile, and can also **block Chrome from silently downloading the on-device Gemini Nano model** (~2–4 GB) by flipping the relevant `chrome://flags` and applying Google's [`GenAILocalFoundationalModelSettings`](https://chromeenterprise.google/policies/gen-ai-local-foundational-model-settings/) Enterprise policy.
 
@@ -148,12 +146,6 @@ go-chrome-ai gui    # GUI mode on macOS release builds or source builds
 - Back up Chrome `User Data` if you want a safety net.
 - Run with the same OS user that owns the Chrome profile.
 - Not affiliated with Google. Use at your own risk.
-
-## Acknowledgements
-
-[![Built with OpenAI Codex](https://img.shields.io/badge/Built%20with-OpenAI%20Codex-10A37F?style=for-the-badge&logo=openai&logoColor=white)](https://chatgpt.com/codex)
-
-Special thanks to **OpenAI Codex** for assisting with parts of the implementation of this project.
 
 ## Contributors ✨
 
