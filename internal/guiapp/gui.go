@@ -31,9 +31,6 @@ func Run() {
 
 	// ---- installations card
 	installs, detectErr := chrome.DetectInstallations()
-	if detectErr != nil {
-		dialog.ShowError(detectErr, w)
-	}
 	items := make([]string, 0, len(installs))
 	for _, ins := range installs {
 		items = append(items, fmt.Sprintf("%-7s  %s", ins.Channel, ins.UserDataPath))
@@ -157,7 +154,13 @@ func Run() {
 		actionBox,
 	))
 
-	// ---- run card: progress + Run button stacked, sits on the right column
+	// ---- run card: run-behavior toggles + progress + Run button, sits on
+	// the right column. dry-run/no-restart were previously only available
+	// from the CLI — the GUI always killed and restarted Chrome for real
+	// with no preview option, which made its single most destructive path
+	// the one with no safety switch.
+	dryRunCheck := widget.NewCheck("Dry run (preview only — no files changed, Chrome not touched)", nil)
+	noRestartCheck := widget.NewCheck("Do not restart Chrome after patching", nil)
 	progress := widget.NewProgressBar()
 	progress.SetValue(0)
 	runButton := widget.NewButton("Run go-chrome-ai", nil)
@@ -171,22 +174,77 @@ func Run() {
 	logScroll := container.NewVScroll(logBox)
 	logsCard := widget.NewCard("Logs", "", logScroll)
 
+	// logBuilder accumulates every log line in one growable buffer instead
+	// of the previous logBox.Text+"\n"+message pattern, which re-copied the
+	// entire log text (an allocation proportional to everything logged so
+	// far) on every single line. strings.Builder's WriteString is amortized
+	// O(1) per call and String() doesn't copy, so appending stays cheap
+	// regardless of how long a run's log gets.
+	var logBuilder strings.Builder
+
+	// appendLogRaw performs the actual widget mutation and must only be
+	// called from the Fyne UI goroutine. It's used directly by code that
+	// runs synchronously during window construction (before ShowAndRun
+	// starts the event loop, so there is no concurrent loop for fyne.Do to
+	// marshal onto) and by runButton.OnTapped's own body (which Fyne also
+	// invokes on the UI goroutine).
+	appendLogRaw := func(message string) {
+		if logBuilder.Len() > 0 {
+			logBuilder.WriteByte('\n')
+		}
+		logBuilder.WriteString(message)
+		logBox.SetText(logBuilder.String())
+		logScroll.ScrollToBottom()
+	}
+
+	// appendLog is the version safe to call from a goroutine other than
+	// the UI one — used by the background goroutine that drives
+	// chrome.Run below, whose Log/Progress callbacks fire from that other
+	// goroutine and must marshal their widget updates onto the UI thread.
 	appendLog := func(message string) {
-		fyne.Do(func() {
-			if logBox.Text == "" {
-				logBox.SetText(message)
-			} else {
-				logBox.SetText(logBox.Text + "\n" + message)
+		fyne.Do(func() { appendLogRaw(message) })
+	}
+
+	// setOptionsEnabled locks every option control for the duration of a
+	// run: chrome.Run snapshots its Options before the run starts, so
+	// changing a checkbox mid-run can't affect what's actually executing —
+	// but leaving them live let the preview (actionBox) silently
+	// contradict what was really happening, which is confusing/untrustworthy
+	// even though it isn't unsafe.
+	setOptionsEnabled := func(enabled bool) {
+		if enabled {
+			// Respect select-all's existing lock: only hand the per-flag
+			// checks back to the user if select-all isn't holding them.
+			if !selectAllCheck.Checked {
+				for _, c := range flagChecks {
+					c.Enable()
+				}
+				policyCheck.Enable()
 			}
-		})
+			selectAllCheck.Enable()
+			dryRunCheck.Enable()
+			noRestartCheck.Enable()
+			return
+		}
+		for _, c := range flagChecks {
+			c.Disable()
+		}
+		policyCheck.Disable()
+		selectAllCheck.Disable()
+		dryRunCheck.Disable()
+		noRestartCheck.Disable()
 	}
 
 	runButton.OnTapped = func() {
 		runButton.Disable()
+		setOptionsEnabled(false)
 		progress.SetValue(0)
-		fyne.Do(func() { logBox.SetText("") })
+		logBuilder.Reset()
+		logBox.SetText("")
 
 		opts := chrome.Options{
+			DryRun:           dryRunCheck.Checked,
+			NoRestart:        noRestartCheck.Checked,
 			AIDownloadFlags:  selectedFlagNames(),
 			AIDownloadPolicy: policyCheck.Checked,
 		}
@@ -205,30 +263,36 @@ func Run() {
 				},
 			})
 
-			fyne.Do(func() { runButton.Enable() })
+			fyne.Do(func() {
+				runButton.Enable()
+				setOptionsEnabled(true)
+			})
 			if runErr != nil {
 				appendLog(fmt.Sprintf("Error: %v", runErr))
 				fyne.Do(func() { dialog.ShowError(runErr, w) })
 				return
 			}
-			appendLog(fmt.Sprintf(
-				"Done. detected=%d patched=%d skipped=%d restarted=%d",
-				summary.DetectedInstallations,
-				summary.PatchedInstallations,
-				summary.SkippedInstallations,
-				summary.RestartedExecutables,
-			))
+			appendLog(chrome.FormatSummary(summary))
 			fyne.Do(func() {
 				dialog.ShowInformation("Completed", "go-chrome-ai patch completed.", w)
 			})
 		}()
 	}
 
-	if len(installs) == 0 {
+	switch {
+	case detectErr != nil:
+		// A dialog can't be shown here: the window has no content yet and
+		// ShowAndRun hasn't started the event loop, so it would never
+		// render. The log panel is visible as soon as the window opens, so
+		// report it there instead — consistent with how the "no
+		// installation found" case below is already surfaced.
 		runButton.Disable()
-		appendLog("No available Chrome user-data path found.")
-	} else {
-		appendLog(fmt.Sprintf("Detected %d Chrome installation(s): %s",
+		appendLogRaw(fmt.Sprintf("Error detecting Chrome installations: %v", detectErr))
+	case len(installs) == 0:
+		runButton.Disable()
+		appendLogRaw("No available Chrome user-data path found.")
+	default:
+		appendLogRaw(fmt.Sprintf("Detected %d Chrome installation(s): %s",
 			len(installs), strings.Join(items, " | ")))
 	}
 
@@ -239,8 +303,9 @@ func Run() {
 	))
 
 	// ---- right column: run controls on top, logs filling the rest
+	runOptionsBox := container.NewVBox(dryRunCheck, noRestartCheck)
 	runRow := container.NewBorder(nil, nil, nil, runButton, progress)
-	runCard := widget.NewCard("Run", "", container.NewVBox(runRow))
+	runCard := widget.NewCard("Run", "", container.NewVBox(runOptionsBox, runRow))
 	rightColumn := container.NewBorder(runCard, nil, nil, nil, logsCard)
 
 	// ---- assemble: header on top, draggable HSplit underneath

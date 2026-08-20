@@ -6,6 +6,25 @@ import (
 	"testing"
 )
 
+// normalizeStrings returns a sorted copy of s, treating nil and empty as
+// equivalent, so tests don't have to care whether a code path returns a nil
+// slice or an empty one, or in what order names were appended.
+func normalizeStrings(s []string) []string {
+	out := append([]string(nil), s...)
+	sort.Strings(out)
+	return out
+}
+
+// normalizeAnyList returns l with nil normalized to an empty, non-nil
+// slice, so tests don't have to care whether "no items" comes back as nil
+// or []any{}.
+func normalizeAnyList(l []any) []any {
+	if len(l) == 0 {
+		return []any{}
+	}
+	return l
+}
+
 func TestSyncManagedFlags(t *testing.T) {
 	cases := []struct {
 		name         string
@@ -14,8 +33,10 @@ func TestSyncManagedFlags(t *testing.T) {
 		selected     []string
 		wantDisabled []string
 		wantReverted []string
-		wantList     []any
-		wantNilBoth  bool
+		// wantNoBrowserKey asserts localState["browser"] was never created
+		// (true no-op path). Mutually exclusive with wantList.
+		wantNoBrowserKey bool
+		wantList         []any
 	}{
 		{
 			name:         "fresh local state, no browser key",
@@ -32,10 +53,9 @@ func TestSyncManagedFlags(t *testing.T) {
 					"enabled_labs_experiments": []any{"foo@2"},
 				},
 			},
-			managed:     []string{"foo"},
-			selected:    []string{"foo"},
-			wantNilBoth: true,
-			wantList:    []any{"foo@2"},
+			managed:  []string{"foo"},
+			selected: []string{"foo"},
+			wantList: []any{"foo@2"},
 		},
 		{
 			name: "flag previously enabled is flipped to disabled",
@@ -50,7 +70,7 @@ func TestSyncManagedFlags(t *testing.T) {
 			wantList:     []any{"bar", "foo@2"},
 		},
 		{
-			name: "duplicates are coalesced",
+			name: "duplicates in existing state are coalesced",
 			input: map[string]any{
 				"browser": map[string]any{
 					"enabled_labs_experiments": []any{"foo@1", "foo@2"},
@@ -59,6 +79,22 @@ func TestSyncManagedFlags(t *testing.T) {
 			managed:  []string{"foo"},
 			selected: []string{"foo"},
 			wantList: []any{"foo@2"},
+		},
+		{
+			name:         "duplicate names in selected are coalesced into one entry",
+			input:        map[string]any{},
+			managed:      []string{"foo"},
+			selected:     []string{"foo", "foo", "foo"},
+			wantDisabled: []string{"foo"},
+			wantList:     []any{"foo@2"},
+		},
+		{
+			name:         "name in selected that is not in managed is ignored",
+			input:        map[string]any{},
+			managed:      []string{"foo"},
+			selected:     []string{"foo", "not-a-real-flag"},
+			wantDisabled: []string{"foo"},
+			wantList:     []any{"foo@2"},
 		},
 		{
 			name: "multiple flags",
@@ -85,12 +121,11 @@ func TestSyncManagedFlags(t *testing.T) {
 			wantList:     []any{"other"},
 		},
 		{
-			name:        "managed flag not selected and not present is a no-op",
-			input:       map[string]any{},
-			managed:     []string{"foo"},
-			selected:    nil,
-			wantNilBoth: true,
-			wantList:    []any{},
+			name:             "managed flag not selected and not present is a no-op, and creates no browser key",
+			input:            map[string]any{},
+			managed:          []string{"foo"},
+			selected:         nil,
+			wantNoBrowserKey: true,
 		},
 		{
 			name: "mixed: one applied, one reverted, unmanaged flag untouched",
@@ -105,42 +140,55 @@ func TestSyncManagedFlags(t *testing.T) {
 			wantDisabled: []string{"bar"},
 			wantList:     []any{"unmanaged@1", "bar@2"},
 		},
+		{
+			name: "non-string entries in the existing list survive a rewrite untouched",
+			input: map[string]any{
+				"browser": map[string]any{
+					"enabled_labs_experiments": []any{"foo@1", float64(999), "bar", true, nil},
+				},
+			},
+			managed:      []string{"foo"},
+			selected:     []string{"foo"},
+			wantDisabled: []string{"foo"},
+			wantList:     []any{float64(999), "bar", true, nil, "foo@2"},
+		},
+		{
+			name: "non-string entries are untouched when nothing else changes",
+			input: map[string]any{
+				"browser": map[string]any{
+					"enabled_labs_experiments": []any{float64(1), "unmanaged"},
+				},
+			},
+			managed:  []string{"foo"},
+			selected: nil,
+			wantList: []any{float64(1), "unmanaged"},
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			gotDisabled, gotReverted := syncManagedFlags(tc.input, tc.managed, tc.selected)
-			if tc.wantNilBoth {
-				if gotDisabled != nil || gotReverted != nil {
-					t.Fatalf("expected nil disabled/reverted, got disabled=%v reverted=%v", gotDisabled, gotReverted)
-				}
-			} else {
-				if len(tc.wantDisabled) > 0 {
-					sort.Strings(gotDisabled)
-					want := append([]string(nil), tc.wantDisabled...)
-					sort.Strings(want)
-					if !reflect.DeepEqual(gotDisabled, want) {
-						t.Fatalf("disabled list mismatch: got %v want %v", gotDisabled, want)
-					}
-				}
-				if len(tc.wantReverted) > 0 {
-					sort.Strings(gotReverted)
-					want := append([]string(nil), tc.wantReverted...)
-					sort.Strings(want)
-					if !reflect.DeepEqual(gotReverted, want) {
-						t.Fatalf("reverted list mismatch: got %v want %v", gotReverted, want)
-					}
-				}
+
+			if !reflect.DeepEqual(normalizeStrings(gotDisabled), normalizeStrings(tc.wantDisabled)) {
+				t.Fatalf("disabled list mismatch: got %v want %v", gotDisabled, tc.wantDisabled)
 			}
-			browser, _ := tc.input["browser"].(map[string]any)
-			if browser == nil {
-				t.Fatalf("expected browser key to exist")
+			if !reflect.DeepEqual(normalizeStrings(gotReverted), normalizeStrings(tc.wantReverted)) {
+				t.Fatalf("reverted list mismatch: got %v want %v", gotReverted, tc.wantReverted)
 			}
-			gotList, _ := browser["enabled_labs_experiments"].([]any)
-			if len(gotList) == 0 && len(tc.wantList) == 0 {
+
+			if tc.wantNoBrowserKey {
+				if v, exists := tc.input["browser"]; exists {
+					t.Fatalf("expected no browser key to be created, got %v", v)
+				}
 				return
 			}
-			if !reflect.DeepEqual(gotList, tc.wantList) {
+
+			browser, ok := tc.input["browser"].(map[string]any)
+			if !ok {
+				t.Fatalf("expected browser key to exist as a map, got %v", tc.input["browser"])
+			}
+			gotList, _ := browser["enabled_labs_experiments"].([]any)
+			if !reflect.DeepEqual(normalizeAnyList(gotList), normalizeAnyList(tc.wantList)) {
 				t.Fatalf("list mismatch: got %v want %v", gotList, tc.wantList)
 			}
 		})

@@ -24,60 +24,64 @@ func policyStorageDescription(applying bool) string {
 	return "Linux: " + verb + " " + linuxManagedPolicyDir + "/" + linuxPolicyFileName + " (requires sudo)"
 }
 
-func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
+func disableAIDownloadPolicyBackend() policyBackend {
 	target := filepath.Join(linuxManagedPolicyDir, linuxPolicyFileName)
 
-	if existing, err := readLinuxPolicy(target); err == nil {
-		if v, ok := existing[GenAIPolicyName].(float64); ok && v == 1 {
-			return PolicyResult{Applied: false, Location: target, Skipped: "already set to 1"}, nil
-		}
+	return policyBackend{
+		location: target,
+		isSet: func() (bool, error) {
+			existing, ok, err := readLinuxPolicy(target)
+			if err != nil {
+				return false, err
+			}
+			if !ok {
+				return false, nil
+			}
+			v, isNum := existing[GenAIPolicyName].(float64)
+			return isNum && v == 1, nil
+		},
+		exists: func() (bool, error) {
+			_, ok, err := readLinuxPolicy(target)
+			return ok, err
+		},
+		write: func() (string, error) {
+			if err := os.MkdirAll(linuxManagedPolicyDir, 0o755); err != nil {
+				return "", fmt.Errorf("create %s failed (sudo required?): %w", linuxManagedPolicyDir, err)
+			}
+			payload := map[string]any{GenAIPolicyName: 1}
+			encoded, err := json.MarshalIndent(payload, "", "  ")
+			if err != nil {
+				return "", err
+			}
+			if err := os.WriteFile(target, encoded, 0o644); err != nil {
+				return "", fmt.Errorf("write %s failed (sudo required?): %w", target, err)
+			}
+			return target, nil
+		},
+		clear: func() (string, error) {
+			if err := os.Remove(target); err != nil {
+				return "", fmt.Errorf("remove %s failed (sudo required?): %w", target, err)
+			}
+			return target, nil
+		},
 	}
-
-	if dryRun {
-		return PolicyResult{Applied: true, Location: target}, nil
-	}
-
-	if err := os.MkdirAll(linuxManagedPolicyDir, 0o755); err != nil {
-		return PolicyResult{}, fmt.Errorf("create %s failed (sudo required?): %w", linuxManagedPolicyDir, err)
-	}
-
-	payload := map[string]any{GenAIPolicyName: 1}
-	encoded, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
-		return PolicyResult{}, err
-	}
-
-	if err := os.WriteFile(target, encoded, 0o644); err != nil {
-		return PolicyResult{}, fmt.Errorf("write %s failed (sudo required?): %w", target, err)
-	}
-	return PolicyResult{Applied: true, Location: target}, nil
 }
 
-func removeDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
-	target := filepath.Join(linuxManagedPolicyDir, linuxPolicyFileName)
-
-	if _, err := os.Stat(target); err != nil {
-		return PolicyResult{Applied: false, Location: target, Skipped: "not set"}, nil
-	}
-
-	if dryRun {
-		return PolicyResult{Applied: true, Location: target}, nil
-	}
-
-	if err := os.Remove(target); err != nil {
-		return PolicyResult{}, fmt.Errorf("remove %s failed (sudo required?): %w", target, err)
-	}
-	return PolicyResult{Applied: true, Location: target}, nil
-}
-
-func readLinuxPolicy(path string) (map[string]any, error) {
+// readLinuxPolicy reads and parses the managed-policy JSON file. ok is
+// false (with a nil error) when the file simply doesn't exist; a non-nil
+// error means the file exists but could not be read/parsed (permission
+// denied, corrupt JSON, ...) and must not be treated as "not set".
+func readLinuxPolicy(path string) (policy map[string]any, ok bool, err error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		}
+		return nil, false, err
 	}
 	var out map[string]any
 	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, err
+		return nil, true, fmt.Errorf("parse %s: %w", path, err)
 	}
-	return out, nil
+	return out, true, nil
 }

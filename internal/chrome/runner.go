@@ -32,11 +32,30 @@ type Callbacks struct {
 type Summary struct {
 	DetectedInstallations int
 	PatchedInstallations  int
-	SkippedInstallations  int
-	RestartedExecutables  int
-	PolicyApplied         bool
-	PolicyReverted        bool
-	PolicyPath            string
+	// SkippedInstallations counts installations with no "Last Version" file
+	// (a Chrome channel directory that exists but has never completed a
+	// run) — an expected, benign state, not a failure.
+	SkippedInstallations int
+	// FailedInstallations counts installations where PatchLocalState itself
+	// returned an error (corrupt/unreadable Local State, permission
+	// denied, backup or atomic-write failure, ...). Unlike
+	// SkippedInstallations, this represents a genuine failure; see Errors
+	// for the underlying per-installation errors.
+	FailedInstallations  int
+	RestartedExecutables int
+	PolicyApplied        bool
+	PolicyReverted       bool
+	PolicyPath           string
+	// Errors holds one entry per installation that failed to patch, beyond
+	// what was already reported via Callbacks.Log, so callers that need
+	// exact failure detail (e.g. to decide a process exit code) don't have
+	// to scrape log text.
+	Errors []error
+	// PolicyError holds the error from applying/removing the Enterprise
+	// policy, if any. It does not fail Run by itself (the policy write is
+	// independent of per-installation patching) but callers generally
+	// should treat a non-nil PolicyError as a failure too.
+	PolicyError error
 }
 
 func Run(opts Options, cb Callbacks) (Summary, error) {
@@ -63,7 +82,12 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 	progress(10)
 	terminatedChrome, err := ShutdownChrome(opts.DryRun)
 	if err != nil {
-		logf(fmt.Sprintf("Warning: failed to enumerate Chrome processes: %v", err))
+		// Either Chrome couldn't be enumerated at all, or some matched
+		// process could not be confirmed stopped. Either way, patching
+		// Local State now would race a Chrome process that might still be
+		// alive and about to overwrite it on exit — abort before touching
+		// any files.
+		return summary, fmt.Errorf("failed to shut down Chrome cleanly: %w", err)
 	}
 	if len(terminatedChrome) > 0 {
 		if opts.DryRun {
@@ -91,7 +115,8 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		})
 		if err != nil {
 			logf(fmt.Sprintf("  Error: failed to patch Local State: %v", err))
-			summary.SkippedInstallations++
+			summary.FailedInstallations++
+			summary.Errors = append(summary.Errors, fmt.Errorf("%s (%s): %w", install.Channel, install.UserDataPath, err))
 			continue
 		}
 
@@ -123,11 +148,22 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		}
 	}
 
+	// If every detected installation genuinely failed to patch (as opposed
+	// to being benignly skipped for having no Last Version file), report
+	// that as a hard error rather than a quiet success — a caller relying
+	// on the exit code needs to be able to tell "nothing happened" apart
+	// from "everything worked".
+	if total > 0 && summary.FailedInstallations == total {
+		return summary, fmt.Errorf("failed to patch all %d detected Chrome installation(s): %w",
+			total, errors.Join(summary.Errors...))
+	}
+
 	if opts.AIDownloadPolicy {
 		policy, err := ApplyDisableAIDownloadPolicy(opts.DryRun)
 		switch {
 		case err != nil:
 			logf(fmt.Sprintf("Warning: failed to apply %s policy: %v", GenAIPolicyName, err))
+			summary.PolicyError = fmt.Errorf("apply %s: %w", GenAIPolicyName, err)
 		case policy.Applied:
 			summary.PolicyApplied = true
 			summary.PolicyPath = policy.Location
@@ -145,6 +181,7 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 		switch {
 		case err != nil:
 			logf(fmt.Sprintf("Warning: failed to remove %s policy: %v", GenAIPolicyName, err))
+			summary.PolicyError = fmt.Errorf("remove %s: %w", GenAIPolicyName, err)
 		case policy.Applied:
 			summary.PolicyReverted = true
 			summary.PolicyPath = policy.Location
@@ -161,9 +198,14 @@ func Run(opts Options, cb Callbacks) (Summary, error) {
 
 	progress(90)
 	if !opts.NoRestart && !opts.DryRun && len(terminatedChrome) > 0 {
-		RestartChrome(terminatedChrome)
-		summary.RestartedExecutables = len(terminatedChrome)
-		logf("Restart Chrome")
+		started, err := RestartChrome(terminatedChrome)
+		summary.RestartedExecutables = started
+		if err != nil {
+			logf(fmt.Sprintf("Warning: %v", err))
+		}
+		if started > 0 {
+			logf(fmt.Sprintf("Restarted %d Chrome executable(s)", started))
+		}
 	}
 
 	progress(100)

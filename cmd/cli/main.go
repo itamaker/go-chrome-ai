@@ -7,5 +7,13 @@ import (
 )
 
 func main() {
-	os.Exit(app.RunCLI(os.Args[1:], os.Stderr))
+	args := os.Args[1:]
+	if len(args) > 0 {
+		switch args[0] {
+		case "help", "-h", "--help":
+			app.Usage(os.Stdout)
+			return
+		}
+	}
+	os.Exit(app.RunCLI(args, os.Stdout, os.Stderr))
 }
