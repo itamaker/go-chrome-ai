@@ -20,7 +20,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w
+      - -s -w -X github.com/itamaker/go-chrome-ai/internal/meta.Version={{.Version}}
   - id: go-chrome-ai-cli
     main: ./cmd/cli
     binary: go-chrome-ai
@@ -35,7 +35,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w
+      - -s -w -X github.com/itamaker/go-chrome-ai/internal/meta.Version={{.Version}}
 
 archives:
   - id: release

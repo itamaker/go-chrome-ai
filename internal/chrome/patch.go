@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+// localStateBackupSuffix names the one-time pristine snapshot this tool
+// keeps of Local State before its first modification, as a manual rollback
+// point (see backupFileOnce in atomicfile.go).
+const localStateBackupSuffix = ".go-chrome-ai.bak"
+
 // PatchResult describes what changed in Local State.
 type PatchResult struct {
 	Modified                                        bool
@@ -87,17 +92,27 @@ func PatchLocalState(userDataPath, lastVersion string, dryRun bool, opts PatchOp
 
 	encoded, err := json.Marshal(localState)
 	if err != nil {
-		return PatchResult{}, fmt.Errorf("encode Local State failed: %w", err)
+		return result, fmt.Errorf("encode Local State failed: %w", err)
 	}
 
+	// Reuse the file's existing permissions rather than guessing. A stat
+	// failure here is surfaced rather than silently falling back to 0644,
+	// which could widen a profile that was deliberately locked down (e.g.
+	// 0600) and would otherwise happen invisibly.
 	fileInfo, err := os.Stat(localStateFile)
-	fileMode := os.FileMode(0o644)
-	if err == nil {
-		fileMode = fileInfo.Mode().Perm()
+	if err != nil {
+		return result, fmt.Errorf("stat Local State failed: %w", err)
+	}
+	fileMode := fileInfo.Mode().Perm()
+
+	// Keep a one-time pristine snapshot before the first modification, so
+	// there is a manual rollback point if the patched profile misbehaves.
+	if err := backupFileOnce(localStateFile, localStateBackupSuffix); err != nil {
+		return result, fmt.Errorf("backup Local State failed: %w", err)
 	}
 
-	if err := os.WriteFile(localStateFile, encoded, fileMode); err != nil {
-		return PatchResult{}, err
+	if err := writeFileAtomic(localStateFile, encoded, fileMode); err != nil {
+		return result, fmt.Errorf("write Local State failed: %w", err)
 	}
 
 	return result, nil

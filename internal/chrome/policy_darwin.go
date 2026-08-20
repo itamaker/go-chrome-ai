@@ -20,47 +20,57 @@ func policyStorageDescription(applying bool) string {
 	return "macOS: defaults delete " + macChromeDefaultsDomain + " " + GenAIPolicyName
 }
 
-func applyDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
+func disableAIDownloadPolicyBackend() policyBackend {
 	location := fmt.Sprintf("defaults domain %s (%s)", macChromeDefaultsDomain, GenAIPolicyName)
 
-	current, err := readMacPolicy()
-	if err == nil && current == "1" {
-		return PolicyResult{Applied: false, Location: location, Skipped: "already set to 1"}, nil
+	return policyBackend{
+		location: location,
+		isSet: func() (bool, error) {
+			value, ok, err := readMacPolicy()
+			if err != nil {
+				return false, err
+			}
+			return ok && value == "1", nil
+		},
+		exists: func() (bool, error) {
+			_, ok, err := readMacPolicy()
+			return ok, err
+		},
+		write: func() (string, error) {
+			cmd := exec.Command("defaults", "write", macChromeDefaultsDomain, GenAIPolicyName, "-int", "1")
+			if out, err := cmd.CombinedOutput(); err != nil {
+				return "", fmt.Errorf("defaults write failed: %w: %s", err, strings.TrimSpace(string(out)))
+			}
+			return location, nil
+		},
+		clear: func() (string, error) {
+			cmd := exec.Command("defaults", "delete", macChromeDefaultsDomain, GenAIPolicyName)
+			if out, err := cmd.CombinedOutput(); err != nil {
+				return "", fmt.Errorf("defaults delete failed: %w: %s", err, strings.TrimSpace(string(out)))
+			}
+			return location, nil
+		},
 	}
-
-	if dryRun {
-		return PolicyResult{Applied: true, Location: location}, nil
-	}
-
-	cmd := exec.Command("defaults", "write", macChromeDefaultsDomain, GenAIPolicyName, "-int", "1")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return PolicyResult{}, fmt.Errorf("defaults write failed: %w: %s", err, strings.TrimSpace(string(out)))
-	}
-	return PolicyResult{Applied: true, Location: location}, nil
 }
 
-func removeDisableAIDownloadPolicy(dryRun bool) (PolicyResult, error) {
-	location := fmt.Sprintf("defaults domain %s (%s)", macChromeDefaultsDomain, GenAIPolicyName)
-
-	if _, err := readMacPolicy(); err != nil {
-		return PolicyResult{Applied: false, Location: location, Skipped: "not set"}, nil
-	}
-
-	if dryRun {
-		return PolicyResult{Applied: true, Location: location}, nil
-	}
-
-	cmd := exec.Command("defaults", "delete", macChromeDefaultsDomain, GenAIPolicyName)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return PolicyResult{}, fmt.Errorf("defaults delete failed: %w: %s", err, strings.TrimSpace(string(out)))
-	}
-	return PolicyResult{Applied: true, Location: location}, nil
-}
-
-func readMacPolicy() (string, error) {
+// readMacPolicy reads the current value of GenAIPolicyName from the
+// defaults domain. ok is false (with a nil error) when the key is simply
+// not set; a non-nil error means the read itself failed for some other
+// reason (e.g. the `defaults` binary missing) and must not be treated as
+// "not set" — conflating the two previously reported real failures to the
+// user as a misleading "already absent".
+func readMacPolicy() (value string, ok bool, err error) {
 	out, err := exec.Command("defaults", "read", macChromeDefaultsDomain, GenAIPolicyName).Output()
 	if err != nil {
-		return "", err
+		if exitErr, isExit := err.(*exec.ExitError); isExit {
+			// `defaults read` exits non-zero and writes "...does not
+			// exist" to stderr when the domain/key is absent — that's
+			// "not set", not a failure to determine state.
+			if strings.Contains(string(exitErr.Stderr), "does not exist") {
+				return "", false, nil
+			}
+		}
+		return "", false, err
 	}
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpace(string(out)), true, nil
 }

@@ -17,24 +17,78 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
-      - name: Run tests
-        run: go test ./...
+      # cmd/go-chrome-ai, cmd/gui, and internal/guiapp embed the Fyne GUI,
+      # which needs CGO plus platform GL/windowing libraries this project
+      # only ships pre-built for macOS (see CLAUDE.md: Linux/Windows
+      # releases are the CLI-only cmd/cli, built with CGO_ENABLED=0). vet
+      # /test/lint on Linux/Windows are scoped to what those platforms
+      # actually release — the OS-agnostic engine, internal/app, and
+      # cmd/cli — rather than failing to even compile the GUI packages for
+      # want of system libraries this project doesn't require Linux/Windows
+      # contributors to install.
+      - name: Determine test scope
+        id: scope
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            echo "packages=./..." >> "$GITHUB_OUTPUT"
+          else
+            echo "packages=./internal/chrome/... ./internal/app/... ./internal/meta/... ./cmd/cli/..." >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Build binary
+      - name: Vet
+        shell: bash
+        run: go vet ${{ steps.scope.outputs.packages }}
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12
+          args: ${{ steps.scope.outputs.packages }}
+
+      - name: Test
+        shell: bash
+        run: go test ${{ steps.scope.outputs.packages }} -race -coverprofile=coverage.out
+
+      - name: Coverage summary
+        shell: bash
+        run: go tool cover -func=coverage.out | tail -1
+
+      - name: Build native binary (macOS)
+        if: runner.os == 'macOS'
         run: go build ./cmd/go-chrome-ai
 
+      # cmd/gui is a dev convenience (see CLAUDE.md) and isn't part of any
+      # release build, but it should still be built somewhere so it can't
+      # silently bit-rot into an entrypoint nobody notices is broken.
+      - name: Build GUI-only dev entrypoint (macOS)
+        if: runner.os == 'macOS'
+        run: go build ./cmd/gui
+
+      - name: Build native binary (Linux/Windows)
+        if: runner.os != 'macOS'
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: go build ./cmd/cli
+
       - name: Build CLI release targets
+        if: runner.os == 'macOS'
         run: |
           mkdir -p /tmp/go-chrome-ai-cross
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /tmp/go-chrome-ai-cross/go-chrome-ai-linux-amd64 ./cmd/cli
@@ -43,7 +97,8 @@ jobs:
           GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -o /tmp/go-chrome-ai-cross/go-chrome-ai-windows-arm64.exe ./cmd/cli
 
       - name: Check GoReleaser config
-        uses: goreleaser/goreleaser-action@v6
+        if: runner.os == 'macOS'
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"

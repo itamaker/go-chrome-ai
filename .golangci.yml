@@ -1,0 +1,22 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  exclusions:
+    rules:
+      # cli.go prints CLI help/status text straight to the caller-provided
+      # stdout/stderr io.Writer. There is nothing productive to do if one
+      # of those writes fails (the process is exiting either way), so
+      # checking every fmt.Fprint*/io.Copy call here would only add noise —
+      # unlike the rest of the codebase, where errcheck should keep
+      # applying at full strength (file I/O, process control, etc.).
+      - path: internal/app/cli\.go
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 )
 
@@ -35,6 +36,40 @@ var chromePaths = map[string]map[string]string{
 	},
 }
 
+// channelPriority orders known channels from most to least stable, purely
+// for consistent, predictable display order. It is deliberately not the
+// source of truth for which channels exist on a platform — chromePaths is.
+// See orderedChannelsFor.
+var channelPriority = []string{"Stable", "Canary", "Dev", "Beta"}
+
+// orderedChannelsFor returns every channel key present in
+// chromePaths[platform], in channelPriority order, followed by any channels
+// not covered by channelPriority (sorted alphabetically). Deriving the list
+// from chromePaths itself — rather than maintaining a separate hard-coded
+// list — means a channel added to chromePaths for one platform can never be
+// silently skipped just because a parallel list wasn't updated to match.
+func orderedChannelsFor(platform string) []string {
+	channels := chromePaths[platform]
+	seen := make(map[string]bool, len(channels))
+	ordered := make([]string, 0, len(channels))
+
+	for _, channel := range channelPriority {
+		if _, ok := channels[channel]; ok {
+			ordered = append(ordered, channel)
+			seen[channel] = true
+		}
+	}
+
+	var rest []string
+	for channel := range channels {
+		if !seen[channel] {
+			rest = append(rest, channel)
+		}
+	}
+	sort.Strings(rest)
+	return append(ordered, rest...)
+}
+
 // DetectInstallations returns the Chrome channels present on this machine.
 func DetectInstallations() ([]Install, error) {
 	platform := runtime.GOOS
@@ -43,15 +78,9 @@ func DetectInstallations() ([]Install, error) {
 		return nil, fmt.Errorf("unsupported platform: %s", platform)
 	}
 
-	orderedChannels := []string{"Stable", "Canary", "Dev", "Beta"}
-	installs := make([]Install, 0, len(orderedChannels))
-
-	for _, channel := range orderedChannels {
-		rawPath, exists := channelPaths[channel]
-		if !exists {
-			continue
-		}
-		resolved, err := expandUserPath(rawPath)
+	installs := make([]Install, 0, len(channelPaths))
+	for _, channel := range orderedChannelsFor(platform) {
+		resolved, err := expandUserPath(channelPaths[channel])
 		if err != nil {
 			continue
 		}

@@ -3,6 +3,7 @@ build/
 output/
 dist/
 *.exe
+coverage.out
 
 # Root binaries from `go build` without -o
 /cli
