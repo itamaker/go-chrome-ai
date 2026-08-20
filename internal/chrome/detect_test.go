@@ -21,13 +21,21 @@ func TestExpandUserPath(t *testing.T) {
 		t.Fatalf("got %q, want %q", got, want)
 	}
 
-	// A path with no ~/ prefix is left as an absolute path, not touched.
-	got2, err := expandUserPath("/etc/opt/chrome")
+	// A path with no ~/ prefix that's already absolute for this platform
+	// round-trips unchanged (filepath.Abs is idempotent on an absolute
+	// path). Built via filepath/t.TempDir rather than a hardcoded POSIX
+	// string like "/etc/opt/chrome", which filepath.Abs on Windows would
+	// treat as relative to the current drive instead of as absolute.
+	absDir, err := filepath.Abs(t.TempDir())
+	if err != nil {
+		t.Fatalf("filepath.Abs: %v", err)
+	}
+	got2, err := expandUserPath(absDir)
 	if err != nil {
 		t.Fatalf("expandUserPath (absolute): %v", err)
 	}
-	if got2 != "/etc/opt/chrome" {
-		t.Fatalf("got %q, want unchanged absolute path", got2)
+	if got2 != absDir {
+		t.Fatalf("got %q, want unchanged absolute path %q", got2, absDir)
 	}
 }
 

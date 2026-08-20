@@ -128,6 +128,15 @@ func TestIsChromeMainProcess(t *testing.T) {
 }
 
 func TestMacAppBundlePath(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		// macAppBundlePath is only ever called from launch() when
+		// runtime.GOOS == "darwin" (see process.go); it parses macOS-style
+		// forward-slash paths using filepath.Dir/Base, which use the
+		// platform's own separator convention (backslash on Windows), so
+		// this test isn't meaningful — and isn't reachable in
+		// production — on any other OS.
+		t.Skip("macAppBundlePath is darwin-only")
+	}
 	cases := []struct {
 		exePath string
 		want    string
