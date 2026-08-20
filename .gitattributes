@@ -1,0 +1,12 @@
+# Force LF line endings for all text files regardless of platform, so tools
+# like gofmt (which expect LF) don't flag files as "not formatted" purely
+# because a Windows checkout converted them to CRLF.
+* text=auto eol=lf
+
+*.go text eol=lf
+go.mod text eol=lf
+go.sum text eol=lf
+
+# Binary/generated assets should never be touched by line-ending normalization.
+*.png binary
+*.dmp binary
